@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotter's Call: Sniper Math Trainer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #0f0;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        #gameContainer {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+        
+        #topBar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5vh;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            border-bottom: 2px solid #0f0;
+            z-index: 100;
+            overflow: hidden;
+        }
+        
+        .topBarLeft {
+            display: flex;
+            gap: 30px;
+            flex: 1;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        
+        .topBarRight {
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        
+        .topBarItem {
+            font-size: 1.2em;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .headerButton {
+            padding: 6px 12px;
+            background: rgba(0, 100, 0, 0.8);
+            color: #0f0;
+            border: 1px solid #0f0;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .headerButton:hover {
+            background: rgba(0, 150, 0, 0.9);
+            color: #fff;
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        
+        #calcPanel {
+            width: 25%;
+            background: rgba(0, 20, 0, 0.95);
+            border-right: 3px solid #0f0;
+            overflow-y: auto;
+            padding: 20px;
+            margin-top: 5vh;
+            height: 95vh;
+        }
+        
+        #gameView {
+            width: 75%;
+            display: flex;
+            flex-direction: column;
+            margin-top: 5vh;
+            height: 95vh;
+            position: relative;
+        }
+        
+        #mainCanvas {
+            width: 100%;
+            height: 70%;
+            background: #87CEEB;
+            cursor: crosshair;
+        }
+        
+        #scopeCanvas {
+            width: 100%;
+            height: 30%;
+            background: #000;
+            border-top: 3px solid #0f0;
+        }
+        
+        .section {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #0f0;
+            border-radius: 5px;
+        }
+        
+        h2 {
+            color: #ff0;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        h3 {
+            color: #0ff;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+        
+        .dataRow {
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+        
+        .label {
+            color: #aaa;
+        }
+        
+        select, input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            background: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            background: #0a0;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #0f0;
+            transform: scale(1.05);
+        }
+        
+        #sendButton {
+            background: #f00;
+            color: #fff;
+            font-size: 1.2em;
+            padding: 15px;
+        }
+        
+        #sendButton:hover {
+            background: #ff0000;
+        }
+        
+        #sendButton:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        #resultsPanel {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border: 2px solid #ff0;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        
+        .correct {
+            color: #0f0;
+        }
+        
+        .error {
+            color: #f00;
+        }
+        
+        .explanation {
+            color: #fff;
+            margin-top: 10px;
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+        
+        #modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            padding: 40px;
+        }
+        
+        #modalContent {
+            background: #001a00;
+            border: 3px solid #0f0;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 800px;
+            margin: 0 auto;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        #closeModal {
+            float: right;
+            background: #f00;
+            padding: 8px 15px;
+            width: auto;
+        }
+        
+        .helpButton {
+            background: #00a;
+            margin: 5px 0;
+        }
+        
+        .helpButton:hover {
+            background: #00f;
+        }
+        
+        .envData {
+            background: rgba(255, 255, 0, 0.1);
+            border: 1px solid #ff0;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        
+        .envData h3 {
+            color: #ff0;
+            margin-bottom: 10px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th, td {
+            border: 1px solid #0f0;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        th {
+            background: #0a0;
+            color: #000;
+            font-weight: bold;
+        }
+        
+        .hitIndicator {
+            font-size: 2em;
+            margin: 10px 0;
+        }
+        
+        #resultsOverlay {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 20, 0, 0.98);
+            border: 3px solid #0f0;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 50;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
+        }
+        
+        #closeOverlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #f00;
+            color: #fff;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            font-size: 1.2em;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        #closeOverlay:hover {
+            background: #ff0000;
+            transform: scale(1.1);
+        }
+        
+        @media (max-width: 1200px) {
+            #calcPanel {
+                width: 30%;
+            }
+            #gameView {
+                width: 70%;
+            }
+            .topBarLeft {
+                gap: 15px;
+            }
+            .topBarItem {
+                font-size: 1em;
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .topBarLeft {
+                gap: 10px;
+            }
+            .topBarItem {
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="topBar">
+        <div class="topBarLeft">
+            <div class="topBarItem">Round: <span id="roundDisplay">1/10</span></div>
+            <div class="topBarItem">Score: <span id="scoreDisplay">0.00</span> mils</div>
+            <div class="topBarItem">Best: <span id="highScoreDisplay">--</span></div>
+        </div>
+        <div class="topBarRight">
+            <button class="headerButton" id="mathGuideButton">📚 Math Guide</button>
+            <button class="headerButton" id="resultsButton">📊 Results</button>
+        </div>
+    </div>
+    
+    <div id="gameContainer">
+        <div id="calcPanel">
+            <div class="section" id="targetSection" style="display:none;">
+                <h2 id="targetHeader">Target 1</h2>
+                <div class="dataRow"><span class="label">Distance:</span> <span id="distanceDisplay">--</span> m</div>
+                <div class="dataRow"><span class="label">Wind:</span> <span id="windDisplay">--</span> mph</div>
+                <div class="dataRow"><span class="label">Temperature:</span> <span id="tempDisplay">--</span> °F</div>
+                <div class="dataRow"><span class="label">Humidity:</span> <span id="humidityDisplay">--</span> %</div>
+                <div class="dataRow"><span class="label">Altitude:</span> <span id="altitudeDisplay">--</span> ft</div>
+                <div class="dataRow"><span class="label">Angle:</span> <span id="angleDisplay">--</span>°</div>
+            </div>
+            
+            <div class="section" id="caliberSection" style="display:none;">
+                <h3>Select Caliber</h3>
+                <select id="caliberSelect">
+                    <option>.308 Winchester (175gr M118LR)</option>
+                    <option>.338 Lapua Magnum (250gr)</option>
+                    <option>6.5 Creedmoor (140gr ELD-M)</option>
+                </select>
+                <button id="tableButton">Open Ballistic Table</button>
+            </div>
+            
+            <div class="section" id="inputSection" style="display:none;">
+                <h3>Your Solution</h3>
+                <label>Dope (Elevation):</label>
+                <input type="number" id="dopeInput" step="0.1" placeholder="mils UP">
+                
+                <label>Drift (Windage):</label>
+                <div style="display: flex; gap: 10px; align-items: center; margin: 5px 0; flex-wrap: wrap;">
+                    <input type="number" id="driftInput" step="0.1" placeholder="mils" style="width: 100px; min-width: 80px;">
+                    <div style="display: flex; gap: 15px; background: rgba(0,255,0,0.1); padding: 8px 12px; border-radius: 3px; min-width: 80px;">
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; min-width: 25px;">
+                            <input type="radio" name="driftDir" value="L" checked> L
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; min-width: 25px;">
+                            <input type="radio" name="driftDir" value="R"> R
+                        </label>
+                    </div>
+                </div>
+                
+                <button id="sendButton">SEND IT</button>
+            </div>
+            
+            <div id="resultsPanel" style="display:none;">
+                <div class="hitIndicator" id="hitIcon">--</div>
+                <h3>Results</h3>
+                <div class="dataRow">Correct Dope: <span class="correct" id="correctDope">--</span> mils UP</div>
+                <div class="dataRow">Your Error: <span class="error" id="dopeError">--</span></div>
+                <div class="dataRow">Correct Drift: <span class="correct" id="correctDrift">--</span> mils LEFT</div>
+                <div class="dataRow">Your Error: <span class="error" id="driftError">--</span></div>
+                <div class="explanation" id="explanation">--</div>
+                <button id="nextButton">Next Target</button>
+                <button id="resetButton" style="display:none;">View Final Score / Reset</button>
+            </div>
+        </div>
+        
+        <div id="gameView">
+            <canvas id="mainCanvas"></canvas>
+            <canvas id="scopeCanvas"></canvas>
+            
+            <div id="resultsOverlay">
+                <button id="closeOverlay">×</button>
+                <div class="hitIndicator" id="overlayHitIcon">--</div>
+                <h2 style="color: #ff0; margin-bottom: 15px;">Shot Results</h2>
+                
+                <h3 style="color: #0ff; margin-bottom: 10px;">Your Solution</h3>
+                <div class="dataRow">Dope: <span style="color: #fff;" id="overlayUserDope">--</span> mils UP</div>
+                <div class="dataRow">Drift: <span style="color: #fff;" id="overlayUserDrift">--</span></div>
+                
+                <h3 style="color: #0ff; margin: 15px 0 10px 0;">Correct Solution</h3>
+                <div class="dataRow">Dope: <span class="correct" id="overlayCorrectDope">--</span> mils UP</div>
+                <div class="dataRow">Drift: <span class="correct" id="overlayCorrectDrift">--</span></div>
+                
+                <h3 style="color: #0ff; margin: 15px 0 10px 0;">Error Analysis</h3>
+                <div class="dataRow">Dope Error: <span class="error" id="overlayDopeError">--</span></div>
+                <div class="dataRow">Drift Error: <span class="error" id="overlayDriftError">--</span></div>
+                
+                <div class="explanation" id="overlayExplanation">--</div>
+                <button id="overlayNextButton" style="margin-top: 20px;">Next Target</button>
+                <button id="overlayResetButton" style="display:none; margin-top: 20px;">View Final Score / Reset</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="modal">
+        <div id="modalContent">
+            <button id="closeModal">Close</button>
+            <h2 style="clear:both;">Ballistic Table - <span id="modalCaliberName">--</span></h2>
+            <p style="color: #aaa; margin: 10px 0;">100m Zero | Standard Atmosphere (59°F, Sea Level)</p>
+            
+            <div class="envData" id="modalEnvData" style="display:none;">
+                <h3>Current Target Environmental Data</h3>
+                <div class="dataRow"><span class="label">Distance:</span> <span id="modalDistance">--</span> m</div>
+                <div class="dataRow"><span class="label">Wind:</span> <span id="modalWind">--</span> mph</div>
+                <div class="dataRow"><span class="label">Temperature:</span> <span id="modalTemp">--</span> °F</div>
+                <div class="dataRow"><span class="label">Humidity:</span> <span id="modalHumidity">--</span> %</div>
+                <div class="dataRow"><span class="label">Altitude:</span> <span id="modalAltitude">--</span> ft</div>
+                <div class="dataRow"><span class="label">Angle:</span> <span id="modalAngle">--</span>°</div>
+            </div>
+            
+            <table id="ballisticTable">
+                <thead>
+                    <tr>
+                        <th>Range (m)</th>
+                        <th>Elevation (mils UP)</th>
+                        <th>Bullet Drift @ 10mph R→L<br>(mils LEFT)</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+            <p style="color: #ff0; margin-top: 10px; font-size: 0.9em;">⚠️ Drift values show bullet movement. Aim OPPOSITE direction to compensate (R→L wind = aim RIGHT).</p>
+        </div>
+    </div>
+    
+    <div id="mathModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; padding:40px; overflow-y:auto;">
+        <div id="modalContent">
+            <button id="closeMathModal">Close</button>
+            <h2 style="clear:both;">📚 Ballistic Math Guide</h2>
+            
+            <div style="color: #fff; line-height: 1.6; margin-top: 20px;">
+                <h3 style="color: #0ff; margin-top: 20px;">1. Basic Ballistic Trajectory</h3>
+                <p>Bullets don't travel in a straight line - they follow a parabolic arc due to gravity. The farther the target, the more the bullet drops. This is why we need <strong>elevation/dope</strong> adjustments.</p>
+                
+                <h3 style="color: #0ff; margin-top: 20px;">2. Angle Compensation (Cosine Rule)</h3>
+                <p><strong>Formula:</strong> Effective Range = Actual Distance × cos(angle)</p>
+                <p>When shooting uphill (+) or downhill (-), gravity affects the bullet less than at flat angles. A 1000m shot at 20° uphill has an <em>effective range</em> of 1000 × cos(20°) ≈ 940m for drop calculation.</p>
+                <p><strong>Why?</strong> Only the horizontal component of gravity affects the bullet's drop. Use the ballistic table value for the <em>effective range</em>, not actual distance.</p>
+                
+                <h3 style="color: #0ff; margin-top: 20px;">3. Wind Drift</h3>
+                <p><strong>Formula:</strong> Drift Correction = -1 × Table Drift @ 10mph × (Actual Wind / 10)</p>
+                <p>Wind pushes the bullet in the direction it's blowing. To compensate, you must aim <em>into the wind</em> (opposite direction).</p>
+                <p><strong>Example:</strong> Wind blowing Right → Left at 10mph:</p>
+                <ul style="margin-left: 20px;">
+                    <li>Bullet will drift LEFT (wind pushes it left)</li>
+                    <li>To compensate, aim RIGHT (into the wind)</li>
+                    <li>If table shows 2.0 mils drift, your correction is 2.0 mils RIGHT</li>
+                </ul>
+                <p><strong>Important:</strong> Ballistic tables show how much the bullet drifts due to wind. Your shooting correction must be in the <strong>opposite direction</strong> to compensate for that drift.</p>
+                <p>If wind is 5mph, multiply by 0.5. If 15mph, multiply by 1.5.</p>
+                <p><strong>Full-value wind:</strong> Wind blowing perpendicular (90°) to the bullet path has maximum effect. In this game, all wind is right-to-left crosswind.</p>
+                
+                <h3 style="color: #0ff; margin-top: 20px;">4. Temperature Effects</h3>
+                <p>Standard atmosphere is 59°F. In this simulation:</p>
+                <ul style="margin-left: 20px;">
+                    <li><strong>Hot air (>59°F):</strong> Less dense → less drag → bullet flies slightly faster/flatter (minor effect in game)</li>
+                    <li><strong>Cold air (<59°F):</strong> Denser → more drag → bullet drops slightly more</li>
+                </ul>
+                <p><em>For simplicity, this game uses standard tables. Real snipers adjust ~1% per 15°F deviation.</em></p>
+                
+                <h3 style="color: #0ff; margin-top: 20px;">5. Altitude/Pressure Effects</h3>
+                <p>Standard altitude is sea level (0 ft). Higher altitudes have thinner air:</p>
+                <ul style="margin-left: 20px;">
+                    <li><strong>Higher altitude:</strong> Less drag → flatter trajectory → slightly less drop</li>
+                    <li><strong>Lower altitude:</strong> More drag → more drop</li>
+                </ul>
+                <p><em>Real impact: ~5% change at 5000ft. This game uses standard tables for learning core concepts.</em></p>
+                
+                <h3 style="color: #0ff; margin-top: 20px;">6. Humidity Effects</h3>
+                <p>Humid air is actually <em>less dense</em> than dry air (water vapor is lighter than nitrogen/oxygen). Effect is minor (~1%) and often negligible compared to temp/altitude.</p>
+                
+                <h3 style="color: #0ff; margin-top: 20px;">7. Linear Interpolation</h3>
+                <p>Ballistic tables show data every 100m. For distances between table values:</p>
+                <p><strong>Formula:</strong> Value = Lower + (Upper - Lower) × (Distance - Lower Range) / (Range Difference)</p>
+                <p><strong>Example:</strong> 750m with .308 Winchester (table shows 700m = 3.3 mils, 800m = 4.6 mils):</p>
+                <p>Dope = 3.3 + (4.6 - 3.3) × (750 - 700) / (800 - 700) = 3.3 + 1.3 × 0.5 = 3.95 mils</p>
+                
+                <h3 style="color: #0ff; margin-top: 20px;">8. Step-by-Step Solution Process</h3>
+                <ol style="margin-left: 20px;">
+                    <li>Apply angle compensation: Effective Range = Distance × cos(angle)</li>
+                    <li>Interpolate elevation from ballistic table at effective range</li>
+                    <li>Interpolate drift from ballistic table at effective range</li>
+                    <li>Scale drift for actual wind: Table Drift × (Wind Speed / 10)</li>
+                    <li>Reverse direction for correction: Aim OPPOSITE to where bullet drifts (R→L wind = aim RIGHT)</li>
+                    <li>Apply corrections to scope and send it!</li>
+                </ol>
+                
+                <h3 style="color: #0ff; margin-top: 20px;">9. Mil vs MOA</h3>
+                <p>This game uses <strong>milliradians (mils)</strong>. One mil equals 1m of adjustment at 1000m distance, or 10cm at 100m. Some scopes use MOA (Minute of Angle), where 1 MOA ≈ 1 inch at 100 yards.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="resultsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; padding:40px; overflow-y:auto;">
+        <div id="modalContent">
+            <button id="closeResultsModal">Close</button>
+            <h2 style="clear:both;">📊 Shot Results History</h2>
+            <table style="margin-top: 20px;">
+                <thead>
+                    <tr>
+                        <th>Round</th>
+                        <th>Distance</th>
+                        <th>Caliber</th>
+                        <th>Error (mils)</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsTableBody">
+                    <tr><td colspan="5" style="text-align:center; color:#aaa;">No shots fired yet</td></tr>
+                </tbody>
+            </table>
+            <div style="margin-top: 20px; padding: 15px; border: 2px solid #0f0; border-radius: 5px;">
+                <h3 style="color: #ff0;">Current Game Stats</h3>
+                <div class="dataRow">Rounds Completed: <span id="resultsRounds">0</span>/10</div>
+                <div class="dataRow">Total Error: <span id="resultsTotalError">0.00</span> mils</div>
+                <div class="dataRow">Average Error: <span id="resultsAvgError">--</span> mils</div>
+                <div class="dataRow">Perfect Hits: <span id="resultsPerfectHits">0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Ballistic Data
+        const ballisticData = {
+            '.308 Winchester (175gr M118LR)': [
+                {range: 100, elev: 0.0, drift10: 0.0},
+                {range: 200, elev: 0.2, drift10: 0.2},
+                {range: 300, elev: 0.5, drift10: 0.4},
+                {range: 400, elev: 0.9, drift10: 0.7},
+                {range: 500, elev: 1.5, drift10: 1.0},
+                {range: 600, elev: 2.3, drift10: 1.4},
+                {range: 700, elev: 3.3, drift10: 1.9},
+                {range: 800, elev: 4.6, drift10: 2.4},
+                {range: 900, elev: 6.1, drift10: 3.0},
+                {range: 1000, elev: 7.9, drift10: 3.7},
+                {range: 1100, elev: 10.0, drift10: 4.5},
+                {range: 1200, elev: 12.5, drift10: 5.4}
+            ],
+            '.338 Lapua Magnum (250gr)': [
+                {range: 100, elev: 0.0, drift10: 0.1},
+                {range: 200, elev: 0.3, drift10: 0.2},
+                {range: 300, elev: 1.0, drift10: 0.3},
+                {range: 400, elev: 1.7, drift10: 0.5},
+                {range: 500, elev: 2.5, drift10: 0.6},
+                {range: 600, elev: 3.4, drift10: 0.7},
+                {range: 700, elev: 4.4, drift10: 0.9},
+                {range: 800, elev: 5.4, drift10: 1.0},
+                {range: 900, elev: 6.5, drift10: 1.2},
+                {range: 1000, elev: 7.7, drift10: 1.4},
+                {range: 1100, elev: 8.9, drift10: 1.5},
+                {range: 1200, elev: 10.3, drift10: 1.7},
+                {range: 1300, elev: 11.8, drift10: 1.9},
+                {range: 1400, elev: 13.4, drift10: 2.1},
+                {range: 1500, elev: 15.1, drift10: 2.4}
+            ],
+            '6.5 Creedmoor (140gr ELD-M)': [
+                {range: 100, elev: 0.0, drift10: 0.0},
+                {range: 200, elev: 0.1, drift10: 0.1},
+                {range: 300, elev: 0.4, drift10: 0.3},
+                {range: 400, elev: 0.8, drift10: 0.5},
+                {range: 500, elev: 1.4, drift10: 0.8},
+                {range: 600, elev: 2.1, drift10: 1.1},
+                {range: 700, elev: 3.0, drift10: 1.5},
+                {range: 800, elev: 4.1, drift10: 1.9},
+                {range: 900, elev: 5.4, drift10: 2.4},
+                {range: 1000, elev: 6.9, drift10: 3.0},
+                {range: 1100, elev: 8.7, drift10: 3.6},
+                {range: 1200, elev: 11.0, drift10: 4.3}
+            ]
+        };
+
+        // Game State
+        let gameState = {
+            round: 1,
+            totalError: 0,
+            currentTarget: null,
+            targets: [],
+            shotFired: false,
+            animating: false,
+            shotHistory: [],
+            perfectHits: 0,
+            scopeAnimation: {
+                currentOffsetX: 0,
+                currentOffsetY: 0,
+                targetOffsetX: 0,
+                targetOffsetY: 0,
+                animating: false
+            }
+        };
+
+        // Canvas setup
+        const mainCanvas = document.getElementById('mainCanvas');
+        const mainCtx = mainCanvas.getContext('2d');
+        const scopeCanvas = document.getElementById('scopeCanvas');
+        const scopeCtx = scopeCanvas.getContext('2d');
+
+        function resizeCanvas() {
+            mainCanvas.width = mainCanvas.offsetWidth;
+            mainCanvas.height = mainCanvas.offsetHeight;
+            scopeCanvas.width = scopeCanvas.offsetWidth;
+            scopeCanvas.height = scopeCanvas.offsetHeight;
+            drawMainView();
+            drawScope();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Generate targets for round
+        function generateTargets() {
+            const difficulties = [
+                {dist: [300, 500], wind: [3, 6], angle: [-5, 5]},
+                {dist: [400, 600], wind: [4, 8], angle: [-8, 8]},
+                {dist: [500, 700], wind: [5, 10], angle: [-10, 10]},
+                {dist: [600, 800], wind: [6, 11], angle: [-12, 12]},
+                {dist: [700, 900], wind: [7, 12], angle: [-13, 15]},
+                {dist: [800, 1000], wind: [8, 13], angle: [-14, 16]},
+                {dist: [850, 1050], wind: [9, 14], angle: [-15, 17]},
+                {dist: [900, 1100], wind: [10, 14], angle: [-15, 18]},
+                {dist: [950, 1150], wind: [11, 15], angle: [-15, 19]},
+                {dist: [1000, 1200], wind: [12, 15], angle: [-15, 20]}
+            ];
+            
+            const diff = difficulties[Math.min(gameState.round - 1, 9)];
+            
+            return {
+                id: gameState.round,
+                x: Math.random() * 0.6 + 0.2,
+                y: Math.random() * 0.4 + 0.3,
+                distance: Math.floor(Math.random() * (diff.dist[1] - diff.dist[0]) + diff.dist[0]),
+                wind: Math.floor(Math.random() * (diff.wind[1] - diff.wind[0]) + diff.wind[0]),
+                temp: Math.floor(Math.random() * 30 + 45),
+                humidity: Math.floor(Math.random() * 40 + 40),
+                altitude: Math.floor(Math.random() * 3000 + 1000),
+                angle: Math.floor(Math.random() * (diff.angle[1] - diff.angle[0]) + diff.angle[0])
+            };
+        }
+
+        // Linear interpolation for ballistic data
+        function interpolateBallistics(caliber, distance) {
+            const data = ballisticData[caliber];
+            
+            // Find bracketing points
+            let lower = data[0];
+            let upper = data[data.length - 1];
+            
+            for (let i = 0; i < data.length - 1; i++) {
+                if (distance >= data[i].range && distance <= data[i + 1].range) {
+                    lower = data[i];
+                    upper = data[i + 1];
+                    break;
+                }
+            }
+            
+            if (distance <= data[0].range) return {elev: data[0].elev, drift10: data[0].drift10};
+            if (distance >= data[data.length - 1].range) return {elev: upper.elev, drift10: upper.drift10};
+            
+            // Linear interpolation
+            const ratio = (distance - lower.range) / (upper.range - lower.range);
+            const elev = lower.elev + ratio * (upper.elev - lower.elev);
+            const drift10 = lower.drift10 + ratio * (upper.drift10 - lower.drift10);
+            
+            return {elev, drift10};
+        }
+
+        // Calculate correct solution
+        function calculateSolution(target, caliber) {
+            // Angle compensation using cosine
+            const angleRad = target.angle * Math.PI / 180;
+            const effectiveRange = target.distance * Math.cos(angleRad);
+            
+            // Get base ballistics for effective range
+            const ballistics = interpolateBallistics(caliber, effectiveRange);
+            
+            // Wind scaling (proportional to actual wind vs 10mph)
+            // Wind R→L means bullet drifts LEFT, so we need to aim RIGHT (negative drift)
+            const windFactor = target.wind / 10.0;
+            const drift = -ballistics.drift10 * windFactor; // Negative because we aim opposite to drift
+            
+            return {
+                dope: ballistics.elev,
+                drift: drift, // Negative = RIGHT, Positive = LEFT
+                effectiveRange: effectiveRange
+            };
+        }
+
+        // Draw main landscape view
+        function drawMainView() {
+            const w = mainCanvas.width;
+            const h = mainCanvas.height;
+            
+            // Sky gradient
+            const skyGrad = mainCtx.createLinearGradient(0, 0, 0, h);
+            skyGrad.addColorStop(0, '#87CEEB');
+            skyGrad.addColorStop(1, '#B0E0E6');
+            mainCtx.fillStyle = skyGrad;
+            mainCtx.fillRect(0, 0, w, h);
+            
+            // Far distant hills (lightest)
+            mainCtx.fillStyle = '#8B9A8B';
+            mainCtx.beginPath();
+            mainCtx.moveTo(0, h * 0.45);
+            for (let x = 0; x < w; x += 30) {
+                mainCtx.lineTo(x, h * 0.45 + Math.sin(x * 0.008) * 35 + Math.cos(x * 0.015) * 20);
+            }
+            mainCtx.lineTo(w, h);
+            mainCtx.lineTo(0, h);
+            mainCtx.closePath();
+            mainCtx.fill();
+            
+            // Mid-distant hills
+            mainCtx.fillStyle = '#6B8E23';
+            mainCtx.beginPath();
+            mainCtx.moveTo(0, h * 0.55);
+            for (let x = 0; x < w; x += 40) {
+                mainCtx.lineTo(x, h * 0.55 + Math.sin(x * 0.01 + 2) * 40 + Math.cos(x * 0.02) * 25);
+            }
+            mainCtx.lineTo(w, h);
+            mainCtx.lineTo(0, h);
+            mainCtx.closePath();
+            mainCtx.fill();
+            
+            // Near hills
+            mainCtx.fillStyle = '#556B2F';
+            mainCtx.beginPath();
+            mainCtx.moveTo(0, h * 0.65);
+            for (let x = 0; x < w; x += 35) {
+                mainCtx.lineTo(x, h * 0.65 + Math.sin(x * 0.012 + 1) * 30 + Math.cos(x * 0.025) * 20);
+            }
+            mainCtx.lineTo(w, h);
+            mainCtx.lineTo(0, h);
+            mainCtx.closePath();
+            mainCtx.fill();
+            
+            // Near-ground rolling hills
+            mainCtx.fillStyle = '#4A5D23';
+            mainCtx.beginPath();
+            mainCtx.moveTo(0, h * 0.75);
+            for (let x = 0; x < w; x += 30) {
+                mainCtx.lineTo(x, h * 0.75 + Math.sin(x * 0.015 + 3) * 25);
+            }
+            mainCtx.lineTo(w, h);
+            mainCtx.lineTo(0, h);
+            mainCtx.closePath();
+            mainCtx.fill();
+            
+            // Ground/foreground
+            const groundGrad = mainCtx.createLinearGradient(0, h * 0.82, 0, h);
+            groundGrad.addColorStop(0, '#8B7355');
+            groundGrad.addColorStop(1, '#654321');
+            mainCtx.fillStyle = groundGrad;
+            mainCtx.fillRect(0, h * 0.82, w, h * 0.18);
+            
+            // Add trees and bushes for visual interest
+            // Use deterministic positions based on target distance (so they don't randomly change)
+            const seed = gameState.currentTarget ? gameState.currentTarget.distance : 500;
+            
+            // Draw rocks first (in background)
+            for (let i = 0; i < 5; i++) {
+                const rockX = ((seed * (i + 7) * 211) % w);
+                const rockY = h * 0.68 + ((seed * i * 97) % 80);
+                const rockSize = 15 + ((seed * i) % 20);
+                
+                // Rock shadow
+                mainCtx.fillStyle = 'rgba(0,0,0,0.2)';
+                mainCtx.beginPath();
+                mainCtx.ellipse(rockX + 3, rockY + rockSize * 0.6, rockSize * 0.8, rockSize * 0.3, 0, 0, Math.PI * 2);
+                mainCtx.fill();
+                
+                // Rock
+                mainCtx.fillStyle = '#696969';
+                mainCtx.beginPath();
+                mainCtx.ellipse(rockX, rockY, rockSize, rockSize * 0.7, 0, 0, Math.PI * 2);
+                mainCtx.fill();
+                
+                // Rock highlight
+                mainCtx.fillStyle = '#808080';
+                mainCtx.beginPath();
+                mainCtx.ellipse(rockX - rockSize * 0.2, rockY - rockSize * 0.2, rockSize * 0.4, rockSize * 0.3, 0, 0, Math.PI * 2);
+                mainCtx.fill();
+            }
+            
+            // Draw vegetation
+            for (let i = 0; i < 8; i++) {
+                const treeX = ((seed * (i + 1) * 137) % w);
+                const treeY = h * 0.65 + ((seed * i * 73) % 100);
+                const treeType = (seed * i) % 3;
+                
+                if (treeType === 0) {
+                    // Pine tree with trunk
+                    // Trunk
+                    mainCtx.fillStyle = '#654321';
+                    mainCtx.fillRect(treeX - 3, treeY + 20, 6, 30);
+                    
+                    // Pine foliage (3 layers)
+                    mainCtx.fillStyle = '#2F4F2F';
+                    mainCtx.beginPath();
+                    mainCtx.moveTo(treeX, treeY);
+                    mainCtx.lineTo(treeX - 15, treeY + 30);
+                    mainCtx.lineTo(treeX + 15, treeY + 30);
+                    mainCtx.closePath();
+                    mainCtx.fill();
+                    
+                    mainCtx.fillStyle = '#3D5C3D';
+                    mainCtx.beginPath();
+                    mainCtx.moveTo(treeX, treeY + 20);
+                    mainCtx.lineTo(treeX - 12, treeY + 45);
+                    mainCtx.lineTo(treeX + 12, treeY + 45);
+                    mainCtx.closePath();
+                    mainCtx.fill();
+                } else if (treeType === 1) {
+                    // Leafy bush with irregular shape
+                    mainCtx.fillStyle = '#1a4d1a';
+                    // Draw multiple overlapping circles for organic shape
+                    for (let j = 0; j < 3; j++) {
+                        const offsetX = (j - 1) * 8;
+                        const offsetY = Math.sin(j) * 5;
+                        mainCtx.beginPath();
+                        mainCtx.arc(treeX + offsetX, treeY + 20 + offsetY, 12, 0, Math.PI * 2);
+                        mainCtx.fill();
+                    }
+                    
+                    // Highlights
+                    mainCtx.fillStyle = '#228B22';
+                    mainCtx.beginPath();
+                    mainCtx.arc(treeX - 5, treeY + 15, 8, 0, Math.PI * 2);
+                    mainCtx.fill();
+                    mainCtx.beginPath();
+                    mainCtx.arc(treeX + 5, treeY + 18, 7, 0, Math.PI * 2);
+                    mainCtx.fill();
+                } else {
+                    // Low scrub brush with texture
+                    // Base
+                    mainCtx.fillStyle = '#556B2F';
+                    mainCtx.beginPath();
+                    mainCtx.ellipse(treeX, treeY + 20, 18, 10, 0, 0, Math.PI * 2);
+                    mainCtx.fill();
+                    
+                    // Add some texture with smaller shapes
+                    mainCtx.fillStyle = '#6B8E23';
+                    for (let j = 0; j < 4; j++) {
+                        const angle = (j / 4) * Math.PI * 2;
+                        const offsetX = Math.cos(angle) * 10;
+                        const offsetY = Math.sin(angle) * 6;
+                        mainCtx.beginPath();
+                        mainCtx.arc(treeX + offsetX, treeY + 20 + offsetY, 5, 0, Math.PI * 2);
+                        mainCtx.fill();
+                    }
+                }
+            }
+            
+            // Draw target with perspective
+            if (gameState.currentTarget) {
+                const t = gameState.currentTarget;
+                // Perspective calculation: closer = lower on screen, farther = higher
+                // Map distance to vertical position (300m at 85% down, 1200m at 45% down)
+                const minDist = 300;
+                const maxDist = 1200;
+                const minY = 0.85; // Close targets near bottom
+                const maxY = 0.45; // Far targets higher up
+                
+                const distFactor = (t.distance - minDist) / (maxDist - minDist);
+                const yPos = minY - distFactor * (minY - maxY);
+                
+                // Size scales with distance (perspective)
+                const baseSize = 50;
+                const size = baseSize * (1.5 - distFactor * 0.8);
+                
+                drawTarget(t.x * w, yPos * h, size, t === gameState.currentTarget, t.id);
+            }
+        }
+
+        function drawTarget(x, y, size, selected, id) {
+            // Shadow
+            mainCtx.fillStyle = 'rgba(0,0,0,0.3)';
+            mainCtx.beginPath();
+            mainCtx.ellipse(x + 5, y + size + 5, size * 0.8, size * 0.2, 0, 0, Math.PI * 2);
+            mainCtx.fill();
+            
+            // Target rings
+            mainCtx.fillStyle = '#fff';
+            mainCtx.beginPath();
+            mainCtx.arc(x, y, size, 0, Math.PI * 2);
+            mainCtx.fill();
+            
+            mainCtx.fillStyle = '#000';
+            mainCtx.beginPath();
+            mainCtx.arc(x, y, size * 0.75, 0, Math.PI * 2);
+            mainCtx.fill();
+            
+            mainCtx.fillStyle = '#fff';
+            mainCtx.beginPath();
+            mainCtx.arc(x, y, size * 0.5, 0, Math.PI * 2);
+            mainCtx.fill();
+            
+            mainCtx.fillStyle = '#000';
+            mainCtx.beginPath();
+            mainCtx.arc(x, y, size * 0.25, 0, Math.PI * 2);
+            mainCtx.fill();
+            
+            mainCtx.fillStyle = '#f00';
+            mainCtx.beginPath();
+            mainCtx.arc(x, y, size * 0.1, 0, Math.PI * 2);
+            mainCtx.fill();
+            
+            // Selection glow
+            if (selected) {
+                mainCtx.strokeStyle = '#0f0';
+                mainCtx.lineWidth = 4;
+                mainCtx.shadowBlur = 20;
+                mainCtx.shadowColor = '#0f0';
+                mainCtx.beginPath();
+                mainCtx.arc(x, y, size + 10, 0, Math.PI * 2);
+                mainCtx.stroke();
+                mainCtx.shadowBlur = 0;
+            }
+            
+            // Label
+            mainCtx.fillStyle = selected ? '#0f0' : '#fff';
+            mainCtx.font = 'bold 16px Courier New';
+            mainCtx.textAlign = 'center';
+            mainCtx.fillText(`Target ${id}`, x, y - size - 10);
+        }
+
+        // Draw scope view with mil-dot reticle
+        // Draw scope view with mil-dot reticle
+        function drawScope() {
+            const w = scopeCanvas.width;
+            const h = scopeCanvas.height;
+            
+            scopeCtx.fillStyle = '#000';
+            scopeCtx.fillRect(0, 0, w, h);
+            
+            if (!gameState.currentTarget) {
+                scopeCtx.fillStyle = '#0f0';
+                scopeCtx.font = '20px Courier New';
+                scopeCtx.textAlign = 'center';
+                scopeCtx.fillText('Select a target to view scope', w / 2, h / 2);
+                return;
+            }
+            
+            // Get user inputs for reticle adjustment
+            const userDope = parseFloat(document.getElementById('dopeInput').value) || 0;
+            const userDriftRaw = parseFloat(document.getElementById('driftInput').value) || 0;
+            const driftDir = document.querySelector('input[name="driftDir"]:checked').value;
+            const userDrift = driftDir === 'L' ? userDriftRaw : -userDriftRaw; // Left is positive, Right is negative
+            
+            const centerX = w / 2;
+            const centerY = h / 2;
+            const milSpacing = 30; // pixels per mil
+            
+            // Calculate target offset
+            const targetOffsetX = userDrift * milSpacing;
+            const targetOffsetY = userDope * milSpacing;
+            
+            // Smooth animation
+            const animSpeed = 0.2; // Adjust for faster/slower animation (0.1 = slower, 0.3 = faster)
+            if (Math.abs(gameState.scopeAnimation.targetOffsetX - targetOffsetX) > 0.5 ||
+                Math.abs(gameState.scopeAnimation.targetOffsetY - targetOffsetY) > 0.5) {
+                gameState.scopeAnimation.targetOffsetX = targetOffsetX;
+                gameState.scopeAnimation.targetOffsetY = targetOffsetY;
+                gameState.scopeAnimation.animating = true;
+            }
+            
+            if (gameState.scopeAnimation.animating) {
+                // Interpolate current position toward target
+                gameState.scopeAnimation.currentOffsetX += (gameState.scopeAnimation.targetOffsetX - gameState.scopeAnimation.currentOffsetX) * animSpeed;
+                gameState.scopeAnimation.currentOffsetY += (gameState.scopeAnimation.targetOffsetY - gameState.scopeAnimation.currentOffsetY) * animSpeed;
+                
+                // Stop animating when close enough
+                if (Math.abs(gameState.scopeAnimation.targetOffsetX - gameState.scopeAnimation.currentOffsetX) < 0.1 &&
+                    Math.abs(gameState.scopeAnimation.targetOffsetY - gameState.scopeAnimation.currentOffsetY) < 0.1) {
+                    gameState.scopeAnimation.currentOffsetX = gameState.scopeAnimation.targetOffsetX;
+                    gameState.scopeAnimation.currentOffsetY = gameState.scopeAnimation.targetOffsetY;
+                    gameState.scopeAnimation.animating = false;
+                } else {
+                    // Continue animation
+                    requestAnimationFrame(drawScope);
+                }
+            }
+            
+            const reticleOffsetX = gameState.scopeAnimation.currentOffsetX;
+            const reticleOffsetY = gameState.scopeAnimation.currentOffsetY;
+            
+            // Draw simplified landscape background in scope
+            // Sky
+            const skyGrad = scopeCtx.createLinearGradient(0, 0, 0, h * 0.4);
+            skyGrad.addColorStop(0, '#87CEEB');
+            skyGrad.addColorStop(1, '#B0E0E6');
+            scopeCtx.fillStyle = skyGrad;
+            scopeCtx.fillRect(0, 0, w, h * 0.4);
+            
+            // Hills based on target distance (farther = more hills visible)
+            const t = gameState.currentTarget;
+            const distFactor = (t.distance - 300) / (1200 - 300);
+            
+            // Far hills
+            scopeCtx.fillStyle = '#6B8E23';
+            scopeCtx.beginPath();
+            scopeCtx.moveTo(0, h * 0.35);
+            for (let x = 0; x < w; x += 40) {
+                scopeCtx.lineTo(x, h * 0.35 + Math.sin(x * 0.02 + distFactor * 5) * 15);
+            }
+            scopeCtx.lineTo(w, h);
+            scopeCtx.lineTo(0, h);
+            scopeCtx.closePath();
+            scopeCtx.fill();
+            
+            // Near ground
+            scopeCtx.fillStyle = '#556B2F';
+            scopeCtx.beginPath();
+            scopeCtx.moveTo(0, h * 0.55);
+            for (let x = 0; x < w; x += 30) {
+                scopeCtx.lineTo(x, h * 0.55 + Math.sin(x * 0.03 + distFactor * 3) * 20);
+            }
+            scopeCtx.lineTo(w, h);
+            scopeCtx.lineTo(0, h);
+            scopeCtx.closePath();
+            scopeCtx.fill();
+            
+            // Foreground
+            const groundGrad = scopeCtx.createLinearGradient(0, h * 0.7, 0, h);
+            groundGrad.addColorStop(0, '#8B7355');
+            groundGrad.addColorStop(1, '#654321');
+            scopeCtx.fillStyle = groundGrad;
+            scopeCtx.fillRect(0, h * 0.7, w, h * 0.3);
+            
+            // Dark vignette circle
+            const radius = Math.min(w, h) * 0.45;
+            const vignetteGrad = scopeCtx.createRadialGradient(centerX, centerY, radius * 0.9, centerX, centerY, radius * 1.1);
+            vignetteGrad.addColorStop(0, 'rgba(0,0,0,0)');
+            vignetteGrad.addColorStop(1, 'rgba(0,0,0,0.8)');
+            scopeCtx.fillStyle = vignetteGrad;
+            scopeCtx.fillRect(0, 0, w, h);
+            
+            // Target (moves opposite to adjustments) - DRAW FIRST so reticle is on top
+            // If you dial LEFT (positive userDrift), target moves RIGHT (positive X)
+            // If you dial UP (positive userDope), target moves DOWN (positive Y, since Y increases downward)
+            const targetSize = 60;
+            const targetDisplayX = centerX + reticleOffsetX;  // LEFT makes target go RIGHT
+            const targetDisplayY = centerY + reticleOffsetY;  // UP makes target go DOWN (positive Y = down)
+            drawTargetInScope(targetDisplayX, targetDisplayY, targetSize);
+            
+            // Mil-dot reticle (stays centered) - DRAW ON TOP of target
+            scopeCtx.strokeStyle = '#0f0';
+            scopeCtx.fillStyle = '#0f0';
+            scopeCtx.lineWidth = 1;
+            
+            const reticleX = centerX;
+            const reticleY = centerY;
+            
+            // Horizontal line
+            scopeCtx.beginPath();
+            scopeCtx.moveTo(reticleX - radius, reticleY);
+            scopeCtx.lineTo(reticleX + radius, reticleY);
+            scopeCtx.stroke();
+            
+            // Vertical line
+            scopeCtx.beginPath();
+            scopeCtx.moveTo(reticleX, reticleY - radius);
+            scopeCtx.lineTo(reticleX, reticleY + radius);
+            scopeCtx.stroke();
+            
+            // Mil dots - each dot is 1 mil - DRAW ON TOP of target
+            for (let i = -15; i <= 15; i++) {
+                if (i === 0) continue;
+                
+                // Horizontal dots (every 1 mil)
+                scopeCtx.beginPath();
+                scopeCtx.arc(reticleX + i * milSpacing, reticleY, 2, 0, Math.PI * 2);
+                scopeCtx.fill();
+                
+                // Vertical dots (every 1 mil)
+                scopeCtx.beginPath();
+                scopeCtx.arc(reticleX, reticleY + i * milSpacing, 2, 0, Math.PI * 2);
+                scopeCtx.fill();
+            }
+            
+            // Center crosshair (red) - DRAW ON TOP
+            scopeCtx.strokeStyle = '#f00';
+            scopeCtx.lineWidth = 2;
+            scopeCtx.beginPath();
+            scopeCtx.moveTo(reticleX - 10, reticleY);
+            scopeCtx.lineTo(reticleX + 10, reticleY);
+            scopeCtx.moveTo(reticleX, reticleY - 10);
+            scopeCtx.lineTo(reticleX, reticleY + 10);
+            scopeCtx.stroke();
+            
+            // Range info - draw with dark background for visibility
+            scopeCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            scopeCtx.fillRect(5, 5, 80, 25);
+            scopeCtx.fillStyle = '#0f0';
+            scopeCtx.font = '14px Courier New';
+            scopeCtx.textAlign = 'left';
+            scopeCtx.fillText(`${t.distance}m`, 10, 20);
+            
+            // Adjustment display with dark background
+            if (userDope !== 0 || Math.abs(userDrift) !== 0) {
+                scopeCtx.font = '12px Courier New';
+                scopeCtx.textAlign = 'right';
+                const displayDriftDir = userDrift > 0 ? 'L' : (userDrift < 0 ? 'R' : '');
+                const driftDisplay = userDrift !== 0 ? `${Math.abs(userDrift).toFixed(1)}${displayDriftDir}` : '';
+                const dopeDisplay = userDope !== 0 ? `${userDope.toFixed(1)}↑` : '';
+                const displayText = [dopeDisplay, driftDisplay].filter(Boolean).join(' ');
+                if (displayText) {
+                    const textWidth = scopeCtx.measureText(displayText).width;
+                    scopeCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    scopeCtx.fillRect(w - textWidth - 15, 5, textWidth + 10, 25);
+                    scopeCtx.fillStyle = '#0f0';
+                    scopeCtx.fillText(displayText, w - 10, 20);
+                }
+            }
+        }
+
+        function drawTargetInScope(cx, cy, size) {
+            // Mini target
+            scopeCtx.fillStyle = '#fff';
+            scopeCtx.beginPath();
+            scopeCtx.arc(cx, cy, size, 0, Math.PI * 2);
+            scopeCtx.fill();
+            
+            scopeCtx.fillStyle = '#000';
+            scopeCtx.beginPath();
+            scopeCtx.arc(cx, cy, size * 0.75, 0, Math.PI * 2);
+            scopeCtx.fill();
+            
+            scopeCtx.fillStyle = '#fff';
+            scopeCtx.beginPath();
+            scopeCtx.arc(cx, cy, size * 0.5, 0, Math.PI * 2);
+            scopeCtx.fill();
+            
+            scopeCtx.fillStyle = '#000';
+            scopeCtx.beginPath();
+            scopeCtx.arc(cx, cy, size * 0.25, 0, Math.PI * 2);
+            scopeCtx.fill();
+            
+            scopeCtx.fillStyle = '#f00';
+            scopeCtx.beginPath();
+            scopeCtx.arc(cx, cy, size * 0.1, 0, Math.PI * 2);
+            scopeCtx.fill();
+        }
+
+        // Animate bullet trajectory
+        function animateBullet(userDope, userDrift, correctDope, correctDrift) {
+            return new Promise(resolve => {
+                const w = scopeCanvas.width;
+                const h = scopeCanvas.height;
+                const cx = w / 2;
+                const cy = h / 2;
+                
+                const milSpacing = 30;
+                
+                // Bullet starts from reticle center
+                const startX = cx;
+                const startY = cy;
+                
+                // Calculate where target currently appears in scope with user's adjustments
+                const userOffsetX = userDrift * milSpacing;
+                const userOffsetY = userDope * milSpacing;
+                const targetDisplayX = cx + userOffsetX;  // Where target is in scope
+                const targetDisplayY = cy + userOffsetY;
+                
+                // Bullet hits the center of where the target appears
+                // (This is where the reticle is aimed)
+                const impactX = targetDisplayX;
+                const impactY = targetDisplayY;
+                
+                let progress = 0;
+                const duration = 60; // frames
+                
+                function animate() {
+                    if (progress >= duration) {
+                        // Show impact
+                        scopeCtx.fillStyle = '#ff0';
+                        scopeCtx.shadowBlur = 20;
+                        scopeCtx.shadowColor = '#ff0';
+                        scopeCtx.beginPath();
+                        scopeCtx.arc(impactX, impactY, 8, 0, Math.PI * 2);
+                        scopeCtx.fill();
+                        scopeCtx.shadowBlur = 0;
+                        
+                        // Impact flash
+                        setTimeout(() => {
+                            scopeCtx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                            scopeCtx.fillRect(0, 0, w, h);
+                            setTimeout(() => {
+                                drawScope();
+                                // Keep impact marker
+                                scopeCtx.fillStyle = '#f00';
+                                scopeCtx.beginPath();
+                                scopeCtx.arc(impactX, impactY, 5, 0, Math.PI * 2);
+                                scopeCtx.fill();
+                                resolve();
+                            }, 100);
+                        }, 200);
+                        return;
+                    }
+                    
+                    drawScope();
+                    
+                    // Bullet trail from reticle center to impact
+                    const t = progress / duration;
+                    const x = startX + (impactX - startX) * t;
+                    const y = startY + (impactY - startY) * t;
+                    
+                    scopeCtx.strokeStyle = '#ff0';
+                    scopeCtx.lineWidth = 2;
+                    scopeCtx.shadowBlur = 10;
+                    scopeCtx.shadowColor = '#ff0';
+                    scopeCtx.beginPath();
+                    scopeCtx.moveTo(startX, startY);
+                    scopeCtx.lineTo(x, y);
+                    scopeCtx.stroke();
+                    scopeCtx.shadowBlur = 0;
+                    
+                    scopeCtx.fillStyle = '#fff';
+                    scopeCtx.beginPath();
+                    scopeCtx.arc(x, y, 3, 0, Math.PI * 2);
+                    scopeCtx.fill();
+                    
+                    progress++;
+                    requestAnimationFrame(animate);
+                }
+                
+                animate();
+            });
+        }
+
+        // UI Functions
+        function selectTarget(target) {
+            gameState.currentTarget = target;
+            gameState.shotFired = false;
+            
+            // Reset scope animation
+            gameState.scopeAnimation = {
+                currentOffsetX: 0,
+                currentOffsetY: 0,
+                targetOffsetX: 0,
+                targetOffsetY: 0,
+                animating: false
+            };
+            
+            document.getElementById('targetHeader').textContent = `Target ${target.id}`;
+            document.getElementById('targetSection').style.display = 'block';
+            document.getElementById('caliberSection').style.display = 'block';
+            document.getElementById('inputSection').style.display = 'block';
+            document.getElementById('resultsPanel').style.display = 'none';
+            
+            document.getElementById('distanceDisplay').textContent = target.distance;
+            document.getElementById('windDisplay').textContent = `${target.wind} (R → L)`;
+            document.getElementById('tempDisplay').textContent = target.temp;
+            document.getElementById('humidityDisplay').textContent = target.humidity;
+            document.getElementById('altitudeDisplay').textContent = target.altitude;
+            document.getElementById('angleDisplay').textContent = target.angle > 0 ? `+${target.angle}` : target.angle;
+            
+            document.getElementById('dopeInput').value = '';
+            document.getElementById('driftInput').value = '';
+            document.querySelector('input[name="driftDir"][value="L"]').checked = true;
+            document.getElementById('sendButton').disabled = false;
+            
+            // Add input listeners for real-time scope updates
+            document.getElementById('dopeInput').oninput = drawScope;
+            document.getElementById('driftInput').oninput = drawScope;
+            document.querySelectorAll('input[name="driftDir"]').forEach(radio => {
+                radio.onchange = drawScope;
+            });
+            
+            drawMainView();
+            drawScope();
+        }
+
+        async function sendShot() {
+            if (gameState.shotFired || gameState.animating) return;
+            
+            const userDope = parseFloat(document.getElementById('dopeInput').value) || 0;
+            const userDriftRaw = parseFloat(document.getElementById('driftInput').value) || 0;
+            const driftDir = document.querySelector('input[name="driftDir"]:checked').value;
+            const userDrift = driftDir === 'L' ? userDriftRaw : -userDriftRaw; // Convert to left-positive format
+            const caliber = document.getElementById('caliberSelect').value;
+            
+            gameState.shotFired = true;
+            gameState.animating = true;
+            document.getElementById('sendButton').disabled = true;
+            
+            const solution = calculateSolution(gameState.currentTarget, caliber);
+            
+            await animateBullet(userDope, userDrift, solution.dope, solution.drift);
+            
+            const dopeError = Math.abs(userDope - solution.dope);
+            const driftError = Math.abs(userDrift - solution.drift);
+            const totalError = Math.sqrt(dopeError * dopeError + driftError * driftError);
+            
+            gameState.totalError += totalError;
+            gameState.animating = false;
+            
+            showResults(userDope, userDrift, solution, dopeError, driftError, totalError, caliber, driftDir, userDriftRaw);
+        }
+
+        function showResults(userDope, userDrift, solution, dopeError, driftError, totalError, caliber, driftDir, userDriftRaw) {
+            const perfect = totalError < 0.3;
+            const hit = totalError < 1.0;  // Within 1 mil = hit (30 pixels, target is 60px radius)
+            if (perfect) gameState.perfectHits++;
+            
+            // Save to history
+            gameState.shotHistory.push({
+                round: gameState.round,
+                distance: gameState.currentTarget.distance,
+                caliber: caliber,
+                error: totalError,
+                hit: hit
+            });
+            
+            // Format drift for display (convert to L/R notation)
+            const correctDriftDir = solution.drift >= 0 ? 'L' : 'R';
+            const correctDriftVal = Math.abs(solution.drift);
+            
+            let hitText = hit ? (perfect ? '✓ PERFECT HIT!' : '✓ HIT!') : '✗ MISS';
+            let hitColor = hit ? (perfect ? '#0f0' : '#ff0') : '#f00';
+            
+            document.getElementById('overlayHitIcon').textContent = hitText;
+            document.getElementById('overlayHitIcon').style.color = hitColor;
+            
+            // Show user's solution
+            document.getElementById('overlayUserDope').textContent = userDope.toFixed(2);
+            document.getElementById('overlayUserDrift').textContent = `${userDriftRaw.toFixed(2)} mils ${driftDir}`;
+            
+            // Show correct solution
+            document.getElementById('overlayCorrectDope').textContent = solution.dope.toFixed(2);
+            document.getElementById('overlayCorrectDrift').textContent = `${correctDriftVal.toFixed(2)} mils ${correctDriftDir}`;
+            
+            // Dope error display
+            let dopeErrorText, dopeErrorColor;
+            if (dopeError < 0.01) {
+                dopeErrorText = 'Perfect!';
+                dopeErrorColor = '#0f0';
+            } else if (userDope > solution.dope) {
+                dopeErrorText = `+${dopeError.toFixed(2)} mils too high`;
+                dopeErrorColor = '#f00';
+            } else {
+                dopeErrorText = `-${dopeError.toFixed(2)} mils too low`;
+                dopeErrorColor = '#f00';
+            }
+            
+            // Drift error display
+            let driftErrorText, driftErrorColor;
+            if (driftDir === correctDriftDir) {
+                const diff = userDriftRaw - correctDriftVal;
+                if (Math.abs(diff) < 0.01) {
+                    driftErrorText = 'Perfect!';
+                    driftErrorColor = '#0f0';
+                } else if (diff > 0) {
+                    driftErrorText = `+${Math.abs(diff).toFixed(2)} mils too much ${driftDir}`;
+                    driftErrorColor = '#f00';
+                } else {
+                    driftErrorText = `-${Math.abs(diff).toFixed(2)} mils not enough ${driftDir}`;
+                    driftErrorColor = '#f00';
+                }
+            } else {
+                driftErrorText = `Wrong direction! Should be ${correctDriftDir}, you called ${driftDir}`;
+                driftErrorColor = '#f00';
+            }
+                
+            document.getElementById('overlayDopeError').textContent = dopeErrorText;
+            document.getElementById('overlayDopeError').style.color = dopeErrorColor;
+            document.getElementById('overlayDriftError').textContent = driftErrorText;
+            document.getElementById('overlayDriftError').style.color = driftErrorColor;
+            
+            const explanation = `
+<strong>Calculation Breakdown:</strong><br><br>
+Angle ${gameState.currentTarget.angle}° → Effective range: ${Math.round(solution.effectiveRange)}m<br>
+(${gameState.currentTarget.distance}m × cos(${gameState.currentTarget.angle}°) = ${Math.round(solution.effectiveRange)}m)<br><br>
+From ballistic table at ${Math.round(solution.effectiveRange)}m:<br>
+Elevation: ${solution.dope.toFixed(2)} mils UP<br><br>
+Wind ${gameState.currentTarget.wind}mph (R → L) pushes bullet LEFT<br>
+To compensate, aim ${correctDriftDir}: ${(gameState.currentTarget.wind / 10).toFixed(2)} × table drift<br>
+Final correction: ${correctDriftVal.toFixed(2)} mils ${correctDriftDir}<br><br>
+<strong>Total error: ${totalError.toFixed(3)} mils</strong><br>
+${perfect ? '✓ Perfect shot (<0.3 mil)!' : hit ? '✓ Hit target (<1.0 mil)' : '✗ Miss (>1.0 mil)'}
+            `;
+            
+            document.getElementById('overlayExplanation').innerHTML = explanation;
+            
+            document.getElementById('scoreDisplay').textContent = gameState.totalError.toFixed(2);
+            
+            // Show overlay
+            document.getElementById('resultsOverlay').style.display = 'block';
+            
+            // Setup results panel buttons (hidden until overlay closed)
+            if (gameState.round >= 10) {
+                document.getElementById('overlayNextButton').style.display = 'none';
+                document.getElementById('overlayResetButton').style.display = 'block';
+                document.getElementById('nextButton').style.display = 'none';
+                document.getElementById('resetButton').style.display = 'block';
+            } else {
+                document.getElementById('overlayNextButton').style.display = 'block';
+                document.getElementById('overlayResetButton').style.display = 'none';
+                document.getElementById('nextButton').style.display = 'block';
+                document.getElementById('resetButton').style.display = 'none';
+            }
+        }
+
+        function nextRound() {
+            document.getElementById('resultsOverlay').style.display = 'none';
+            document.getElementById('resultsPanel').style.display = 'none';
+            gameState.round++;
+            document.getElementById('roundDisplay').textContent = `${gameState.round}/10`;
+            gameState.currentTarget = generateTargets();
+            selectTarget(gameState.currentTarget);
+        }
+        
+        function closeResultsOverlay() {
+            document.getElementById('resultsOverlay').style.display = 'none';
+            // Show the Next Target button in results panel (in calc panel)
+            document.getElementById('resultsPanel').style.display = 'block';
+        }
+
+        function resetGame() {
+            // Save high score
+            const currentScore = gameState.totalError.toFixed(2);
+            const highScore = localStorage.getItem('spotterHighScore');
+            
+            if (!highScore || parseFloat(currentScore) < parseFloat(highScore)) {
+                localStorage.setItem('spotterHighScore', currentScore);
+                document.getElementById('highScoreDisplay').textContent = currentScore + ' mils';
+                alert(`NEW BEST SCORE: ${currentScore} mils!`);
+            } else {
+                alert(`Final Score: ${currentScore} mils\nBest: ${highScore} mils`);
+            }
+            
+            gameState = {
+                round: 1,
+                totalError: 0,
+                currentTarget: null,
+                targets: [],
+                shotFired: false,
+                animating: false,
+                shotHistory: [],
+                perfectHits: 0,
+                scopeAnimation: {
+                    currentOffsetX: 0,
+                    currentOffsetY: 0,
+                    targetOffsetX: 0,
+                    targetOffsetY: 0,
+                    animating: false
+                }
+            };
+            
+            document.getElementById('roundDisplay').textContent = '1/10';
+            document.getElementById('scoreDisplay').textContent = '0.00';
+            
+            // Hide overlay and results panel
+            document.getElementById('resultsOverlay').style.display = 'none';
+            document.getElementById('resultsPanel').style.display = 'none';
+            
+            startGame();
+        }
+
+        function showBallisticTable() {
+            const caliber = document.getElementById('caliberSelect').value;
+            const data = ballisticData[caliber];
+            
+            document.getElementById('modalCaliberName').textContent = caliber;
+            
+            // Show environmental data if target is selected
+            if (gameState.currentTarget) {
+                const t = gameState.currentTarget;
+                document.getElementById('modalEnvData').style.display = 'block';
+                document.getElementById('modalDistance').textContent = t.distance;
+                document.getElementById('modalWind').textContent = `${t.wind} (R → L)`;
+                document.getElementById('modalTemp').textContent = t.temp;
+                document.getElementById('modalHumidity').textContent = t.humidity;
+                document.getElementById('modalAltitude').textContent = t.altitude;
+                document.getElementById('modalAngle').textContent = t.angle > 0 ? `+${t.angle}` : t.angle;
+            } else {
+                document.getElementById('modalEnvData').style.display = 'none';
+            }
+            
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.range}</td>
+                    <td>${row.elev.toFixed(1)}</td>
+                    <td>${row.drift10.toFixed(1)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            document.getElementById('modal').style.display = 'block';
+        }
+        
+        function showResultsHistory() {
+            const tbody = document.getElementById('resultsTableBody');
+            tbody.innerHTML = '';
+            
+            if (gameState.shotHistory.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#aaa;">No shots fired yet</td></tr>';
+            } else {
+                gameState.shotHistory.forEach(shot => {
+                    const tr = document.createElement('tr');
+                    tr.style.color = shot.hit ? '#0f0' : '#f88';
+                    tr.innerHTML = `
+                        <td>${shot.round}</td>
+                        <td>${shot.distance}m</td>
+                        <td>${shot.caliber.split('(')[0].trim()}</td>
+                        <td>${shot.error.toFixed(3)}</td>
+                        <td>${shot.hit ? '✓ HIT' : '✗ MISS'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+            
+            // Update stats
+            const completed = gameState.shotHistory.length;
+            const avgError = completed > 0 ? (gameState.totalError / completed).toFixed(3) : '--';
+            
+            document.getElementById('resultsRounds').textContent = completed;
+            document.getElementById('resultsTotalError').textContent = gameState.totalError.toFixed(2);
+            document.getElementById('resultsAvgError').textContent = avgError;
+            document.getElementById('resultsPerfectHits').textContent = gameState.perfectHits;
+            
+            document.getElementById('resultsModal').style.display = 'block';
+        }
+
+        // Event Listeners
+        mainCanvas.addEventListener('click', (e) => {
+            if (gameState.animating || gameState.shotFired) return;
+            
+            const rect = mainCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            if (gameState.currentTarget) {
+                const tx = gameState.currentTarget.x * mainCanvas.width;
+                const ty = gameState.currentTarget.y * mainCanvas.height;
+                const dist = Math.sqrt((x - tx) ** 2 + (y - ty) ** 2);
+                
+                if (dist < 50) {
+                    selectTarget(gameState.currentTarget);
+                }
+            }
+        });
+
+        document.getElementById('sendButton').addEventListener('click', sendShot);
+        document.getElementById('nextButton').addEventListener('click', nextRound);
+        document.getElementById('resetButton').addEventListener('click', resetGame);
+        document.getElementById('overlayNextButton').addEventListener('click', nextRound);
+        document.getElementById('overlayResetButton').addEventListener('click', resetGame);
+        document.getElementById('closeOverlay').addEventListener('click', closeResultsOverlay);
+        document.getElementById('tableButton').addEventListener('click', showBallisticTable);
+        document.getElementById('mathGuideButton').addEventListener('click', () => {
+            document.getElementById('mathModal').style.display = 'block';
+        });
+        document.getElementById('resultsButton').addEventListener('click', showResultsHistory);
+        
+        document.getElementById('closeModal').addEventListener('click', () => {
+            document.getElementById('modal').style.display = 'none';
+        });
+        document.getElementById('closeMathModal').addEventListener('click', () => {
+            document.getElementById('mathModal').style.display = 'none';
+        });
+        document.getElementById('closeResultsModal').addEventListener('click', () => {
+            document.getElementById('resultsModal').style.display = 'none';
+        });
+        
+        // Click outside modals to close
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') {
+                document.getElementById('modal').style.display = 'none';
+            }
+        });
+        document.getElementById('mathModal').addEventListener('click', (e) => {
+            if (e.target.id === 'mathModal') {
+                document.getElementById('mathModal').style.display = 'none';
+            }
+        });
+        document.getElementById('resultsModal').addEventListener('click', (e) => {
+            if (e.target.id === 'resultsModal') {
+                document.getElementById('resultsModal').style.display = 'none';
+            }
+        });
+
+        // Start game
+        function startGame() {
+            const highScore = localStorage.getItem('spotterHighScore');
+            if (highScore) {
+                document.getElementById('highScoreDisplay').textContent = highScore + ' mils';
+            }
+            
+            gameState.currentTarget = generateTargets();
+            selectTarget(gameState.currentTarget);
+        }
+
+        startGame();
+    </script>
+</body>
+</html>
