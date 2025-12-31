@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spotter's Call: Sniper Math Trainer</title>
+    <title>Spotter's Call: Enhanced Sniper Math Trainer</title>
     <style>
         * {
             margin: 0;
@@ -17,6 +17,149 @@
             color: #0f0;
             overflow: hidden;
             height: 100vh;
+        }
+        
+        /* Loading Screen */
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            transition: opacity 0.5s;
+        }
+        
+        #loadingScreen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .loader {
+            border: 4px solid #0a0;
+            border-top: 4px solid #0f0;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Tutorial Overlay */
+        #tutorialOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 9000;
+            overflow-y: auto;
+        }
+        
+        #tutorialContent {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 30px;
+            background: #001a00;
+            border: 3px solid #0f0;
+            border-radius: 10px;
+        }
+        
+        .tutorialStep {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+        
+        .tutorialStep.active {
+            display: block;
+        }
+        
+        .tutorialImage {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+            display: block;
+            border: 2px solid #0f0;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .tutorialNav {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: space-between;
+        }
+        
+        .tutorialProgress {
+            text-align: center;
+            color: #0ff;
+            margin-top: 10px;
+        }
+        
+        /* Settings Modal */
+        #settingsModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 8000;
+            padding: 40px;
+            overflow-y: auto;
+        }
+        
+        #settingsContent {
+            max-width: 700px;
+            margin: 0 auto;
+            background: #001a00;
+            border: 3px solid #0f0;
+            border-radius: 10px;
+            padding: 30px;
+        }
+        
+        .settingGroup {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #0f0;
+            border-radius: 5px;
+        }
+        
+        .settingGroup h3 {
+            color: #0ff;
+            margin-bottom: 10px;
+        }
+        
+        .settingOption {
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .settingOption label {
+            flex: 1;
+        }
+        
+        .settingOption select,
+        .settingOption input {
+            width: 200px;
         }
         
         #gameContainer {
@@ -143,7 +286,7 @@
             color: #aaa;
         }
         
-        select, input {
+        select, input[type="number"], input[type="range"] {
             width: 100%;
             padding: 8px;
             margin: 5px 0;
@@ -152,6 +295,10 @@
             border: 1px solid #0f0;
             border-radius: 3px;
             font-family: 'Courier New', monospace;
+        }
+        
+        input[type="range"] {
+            padding: 0;
         }
         
         button {
@@ -214,7 +361,7 @@
             line-height: 1.4;
         }
         
-        #modal {
+        #modal, #mathModal, #resultsModal {
             display: none;
             position: fixed;
             top: 0;
@@ -224,9 +371,24 @@
             background: rgba(0, 0, 0, 0.9);
             z-index: 1000;
             padding: 40px;
+            overflow-y: auto;
         }
         
-        #modalContent {
+        #ballisticModal {
+            display: none;
+            position: absolute;
+            top: 5vh;
+            left: 25%;
+            width: 75%;
+            height: 70%;
+            background: rgba(0, 20, 0, 0.98);
+            z-index: 1000;
+            overflow-y: auto;
+            border-left: 3px solid #0f0;
+            border-bottom: 3px solid #0f0;
+        }
+        
+        #modalContent, #mathModalContent, #resultsModalContent {
             background: #001a00;
             border: 3px solid #0f0;
             border-radius: 10px;
@@ -237,20 +399,23 @@
             overflow-y: auto;
         }
         
-        #closeModal {
+        .closeModalBtn {
             float: right;
             background: #f00;
             padding: 8px 15px;
             width: auto;
+            margin-bottom: 10px;
         }
         
         .helpButton {
             background: #00a;
+            color: #fff;
             margin: 5px 0;
         }
         
         .helpButton:hover {
             background: #00f;
+            color: #fff;
         }
         
         .envData {
@@ -287,6 +452,7 @@
         .hitIndicator {
             font-size: 2em;
             margin: 10px 0;
+            text-align: center;
         }
         
         #resultsOverlay {
@@ -326,6 +492,116 @@
             transform: scale(1.1);
         }
         
+        .keyboardHint {
+            font-size: 0.75em;
+            color: #888;
+            font-style: italic;
+        }
+        
+        .calculator {
+            background: #2a2a2a;
+            border: 2px solid #555;
+            border-radius: 8px;
+            padding: 15px;
+            width: 220px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        .calc-display {
+            background: #1a3a1a;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 1.5em;
+            padding: 10px;
+            margin-bottom: 10px;
+            text-align: right;
+            border: 1px solid #0f0;
+            border-radius: 3px;
+            min-height: 40px;
+            word-wrap: break-word;
+        }
+        
+        .calc-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        
+        .calc-btn {
+            background: #444;
+            color: #fff;
+            border: 1px solid #666;
+            padding: 15px 10px;
+            font-size: 1.1em;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+            width: auto;
+            margin: 0;
+        }
+        
+        .calc-btn:hover {
+            background: #555;
+            transform: scale(1.05);
+        }
+        
+        .calc-btn:active {
+            background: #333;
+            transform: scale(0.98);
+        }
+        
+        .calc-btn.operator {
+            background: #0a5;
+            color: #fff;
+        }
+        
+        .calc-btn.operator:hover {
+            background: #0c7;
+        }
+        
+        .calc-btn.equals {
+            background: #0a0;
+            color: #000;
+            font-weight: bold;
+            grid-column: span 2;
+        }
+        
+        .calc-btn.equals:hover {
+            background: #0f0;
+        }
+        
+        .calc-btn.clear {
+            background: #c00;
+            grid-column: span 2;
+        }
+        
+        .calc-btn.clear:hover {
+            background: #f00;
+        }
+        
+        .ballistic-content-wrapper {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+        
+        .ballistic-table-section {
+            flex: 1;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 8px;
+            background: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            resize: vertical;
+        }
+        
         @media (max-width: 1200px) {
             #calcPanel {
                 width: 30%;
@@ -352,46 +628,143 @@
     </style>
 </head>
 <body>
-    <div id="topBar">
-        <div class="topBarLeft">
-            <div class="topBarItem">Round: <span id="roundDisplay">1/10</span></div>
-            <div class="topBarItem">Score: <span id="scoreDisplay">0.00</span> mils</div>
-            <div class="topBarItem">Best: <span id="highScoreDisplay">--</span></div>
-        </div>
-        <div class="topBarRight">
-            <button class="headerButton" id="mathGuideButton">📚 Math Guide</button>
-            <button class="headerButton" id="resultsButton">📊 Results</button>
+    <div id="loadingScreen">
+        <div class="loader"></div>
+        <p style="margin-top: 20px; color: #0f0;">Loading Spotter's Call...</p>
+        <p style="margin-top: 10px; color: #888; font-size: 0.9em;">Generating sound effects...</p>
+    </div>
+    
+    <div id="tutorialOverlay">
+        <div id="tutorialContent"></div>
+    </div>
+    
+    <div id="settingsModal">
+        <div id="settingsContent">
+            <button class="closeModalBtn" onclick="document.getElementById('settingsModal').style.display='none'">Close</button>
+            <h2 style="color: #ff0; clear: both;">⚙️ Settings</h2>
+            
+            <div class="settingGroup">
+                <h3>🎯 Reticle Style</h3>
+                <div class="settingOption">
+                    <label>Reticle Type:</label>
+                    <select id="reticleType">
+                        <option value="mildot">Mil-Dot (Standard)</option>
+                        <option value="crosshair">Simple Crosshair</option>
+                        <option value="german">German #4</option>
+                        <option value="holdover">Holdover BDC</option>
+                    </select>
+                </div>
+                <div class="settingOption">
+                    <label>Reticle Color:</label>
+                    <select id="reticleColor">
+                        <option value="#0f0">Green (Night Vision)</option>
+                        <option value="#fff">White</option>
+                        <option value="#f00">Red</option>
+                        <option value="#0ff">Cyan</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="settingGroup">
+                <h3>🎯 Target Type</h3>
+                <div class="settingOption">
+                    <label>Target Style:</label>
+                    <select id="targetType">
+                        <option value="bullseye">Bullseye (Standard)</option>
+                        <option value="ipsc">IPSC Silhouette (Steel)</option>
+                        <option value="car">An Old Dodge (Red Car)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="settingGroup">
+                <h3>🌤️ Environment</h3>
+                <div class="settingOption">
+                    <label>Time of Day:</label>
+                    <select id="timeOfDay">
+                        <option value="random">Random</option>
+                        <option value="morning">Morning</option>
+                        <option value="noon">Noon</option>
+                        <option value="evening">Evening</option>
+                        <option value="night">Night</option>
+                    </select>
+                </div>
+                <div class="settingOption">
+                    <label>Season:</label>
+                    <select id="season">
+                        <option value="random">Random</option>
+                        <option value="spring">Spring</option>
+                        <option value="summer">Summer</option>
+                        <option value="autumn">Autumn</option>
+                        <option value="winter">Winter</option>
+                </select>
+                </div>
+                <div class="settingOption">
+                    <label>Weather Effects:</label>
+                    <input type="checkbox" id="weatherEffects" checked>
+                </div>
+            </div>
+            
+            <div class="settingGroup">
+                <h3>🔊 Sound</h3>
+                <div class="settingOption">
+                    <label>Master Volume:</label>
+                    <input type="range" id="masterVolume" min="0" max="100" value="70">
+                    <span id="volumeDisplay">70%</span>
+                </div>
+                <div class="settingOption">
+                    <label>Sound Effects:</label>
+                    <input type="checkbox" id="soundEffects" checked>
+                </div>
+            </div>
+            
+            <button onclick="applySettings()">Apply Settings</button>
         </div>
     </div>
     
     <div id="gameContainer">
+        <div id="topBar">
+            <div class="topBarLeft">
+                <div class="topBarItem">Round: <span id="roundDisplay">1/10</span></div>
+                <div class="topBarItem">Score: <span id="scoreDisplay">0.00</span> mils</div>
+                <div class="topBarItem">Best: <span id="highScoreDisplay">--</span></div>
+            </div>
+            <div class="topBarRight">
+                <button class="headerButton" onclick="showTutorial()">📚 Tutorial</button>
+                <button class="headerButton" onclick="document.getElementById('settingsModal').style.display='block'">⚙️ Settings</button>
+                <button class="headerButton" onclick="showMathGuide()">📖 Math Guide</button>
+                <button class="headerButton" onclick="showResultsHistory()">📊 Results</button>
+            </div>
+        </div>
+        
         <div id="calcPanel">
             <div class="section" id="targetSection" style="display:none;">
                 <h2 id="targetHeader">Target 1</h2>
-                <div class="dataRow"><span class="label">Distance:</span> <span id="distanceDisplay">--</span> m</div>
-                <div class="dataRow"><span class="label">Wind:</span> <span id="windDisplay">--</span> mph</div>
-                <div class="dataRow"><span class="label">Temperature:</span> <span id="tempDisplay">--</span> °F</div>
-                <div class="dataRow"><span class="label">Humidity:</span> <span id="humidityDisplay">--</span> %</div>
-                <div class="dataRow"><span class="label">Altitude:</span> <span id="altitudeDisplay">--</span> ft</div>
-                <div class="dataRow"><span class="label">Angle:</span> <span id="angleDisplay">--</span>°</div>
+                <h3>Environmental Data</h3>
+                <div class="dataRow">Distance: <span id="distanceDisplay">--</span>m</div>
+                <div class="dataRow">Wind: <span id="windDisplay">--</span></div>
+                <div class="dataRow">Temperature: <span id="tempDisplay">--</span>°F</div>
+                <div class="dataRow">Humidity: <span id="humidityDisplay">--</span>%</div>
+                <div class="dataRow">Altitude: <span id="altitudeDisplay">--</span>ft</div>
+                <div class="dataRow">Angle: <span id="angleDisplay">--</span>°</div>
             </div>
             
             <div class="section" id="caliberSection" style="display:none;">
-                <h3>Select Caliber</h3>
+                <h3>Caliber Selection</h3>
                 <select id="caliberSelect">
-                    <option>.308 Winchester (175gr M118LR)</option>
-                    <option>.338 Lapua Magnum (250gr)</option>
-                    <option>6.5 Creedmoor (140gr ELD-M)</option>
+                    <option value=".308 Winchester (175gr M118LR)">.308 Win (175gr M118LR)</option>
+                    <option value=".338 Lapua Magnum (250gr)">.338 Lapua Magnum (250gr)</option>
+                    <option value="6.5 Creedmoor (140gr ELD-M)">6.5 Creedmoor (140gr ELD-M)</option>
                 </select>
-                <button id="tableButton">Open Ballistic Table</button>
+                <button class="helpButton" onclick="showBallisticTable()">📊 View Ballistic Table</button>
             </div>
             
             <div class="section" id="inputSection" style="display:none;">
                 <h3>Your Solution</h3>
-                <label>Dope (Elevation):</label>
+                <label>Dope (Elevation): <span class="keyboardHint">↑↓</span></label>
                 <input type="number" id="dopeInput" step="0.1" placeholder="mils UP">
                 
-                <label>Drift (Windage):</label>
+                <label>Drift (Windage): <span class="keyboardHint">←→</span></label>
                 <div style="display: flex; gap: 10px; align-items: center; margin: 5px 0; flex-wrap: wrap;">
                     <input type="number" id="driftInput" step="0.1" placeholder="mils" style="width: 100px; min-width: 80px;">
                     <div style="display: flex; gap: 15px; background: rgba(0,255,0,0.1); padding: 8px 12px; border-radius: 3px; min-width: 80px;">
@@ -404,19 +777,18 @@
                     </div>
                 </div>
                 
-                <button id="sendButton">SEND IT</button>
+                <button id="sendButton">SEND IT <span class="keyboardHint">(Enter)</span></button>
             </div>
             
-            <div id="resultsPanel" style="display:none;">
-                <div class="hitIndicator" id="hitIcon">--</div>
-                <h3>Results</h3>
-                <div class="dataRow">Correct Dope: <span class="correct" id="correctDope">--</span> mils UP</div>
-                <div class="dataRow">Your Error: <span class="error" id="dopeError">--</span></div>
-                <div class="dataRow">Correct Drift: <span class="correct" id="correctDrift">--</span> mils LEFT</div>
-                <div class="dataRow">Your Error: <span class="error" id="driftError">--</span></div>
-                <div class="explanation" id="explanation">--</div>
-                <button id="nextButton">Next Target</button>
-                <button id="resetButton" style="display:none;">View Final Score / Reset</button>
+            <div class="section" id="notepadSection">
+                <h3>📝 Notes <span class="keyboardHint">Auto-saves</span></h3>
+                <textarea id="notepad" placeholder="Scratchpad for calculations..." style="min-height: 80px; max-height: 150px;"></textarea>
+            </div>
+            
+            <div class="section" id="resultsPanel" style="display:none;">
+                <h3>Shot Complete</h3>
+                <button id="nextButton" onclick="nextRound()">Next Target</button>
+                <button id="resetButton" onclick="resetGame()" style="display:none;">View Final Score / Reset</button>
             </div>
         </div>
         
@@ -425,7 +797,7 @@
             <canvas id="scopeCanvas"></canvas>
             
             <div id="resultsOverlay">
-                <button id="closeOverlay">×</button>
+                <button id="closeOverlay" onclick="closeResultsOverlay()">×</button>
                 <div class="hitIndicator" id="overlayHitIcon">--</div>
                 <h2 style="color: #ff0; margin-bottom: 15px;">Shot Results</h2>
                 
@@ -442,141 +814,104 @@
                 <div class="dataRow">Drift Error: <span class="error" id="overlayDriftError">--</span></div>
                 
                 <div class="explanation" id="overlayExplanation">--</div>
-                <button id="overlayNextButton" style="margin-top: 20px;">Next Target</button>
-                <button id="overlayResetButton" style="display:none; margin-top: 20px;">View Final Score / Reset</button>
+                <button id="overlayNextButton" style="margin-top: 20px;" onclick="nextRound()">Next Target</button>
+                <button id="overlayResetButton" style="display:none; margin-top: 20px;" onclick="resetGame()">View Final Score / Reset</button>
             </div>
         </div>
+    </div>
+    
+    <div id="ballisticModal">
+        <div id="ballisticModalContent" style="padding: 30px; max-width: 800px; margin: 0 auto;"></div>
     </div>
     
     <div id="modal">
-        <div id="modalContent">
-            <button id="closeModal">Close</button>
-            <h2 style="clear:both;">Ballistic Table - <span id="modalCaliberName">--</span></h2>
-            <p style="color: #aaa; margin: 10px 0;">100m Zero | Standard Atmosphere (59°F, Sea Level)</p>
-            
-            <div class="envData" id="modalEnvData" style="display:none;">
-                <h3>Current Target Environmental Data</h3>
-                <div class="dataRow"><span class="label">Distance:</span> <span id="modalDistance">--</span> m</div>
-                <div class="dataRow"><span class="label">Wind:</span> <span id="modalWind">--</span> mph</div>
-                <div class="dataRow"><span class="label">Temperature:</span> <span id="modalTemp">--</span> °F</div>
-                <div class="dataRow"><span class="label">Humidity:</span> <span id="modalHumidity">--</span> %</div>
-                <div class="dataRow"><span class="label">Altitude:</span> <span id="modalAltitude">--</span> ft</div>
-                <div class="dataRow"><span class="label">Angle:</span> <span id="modalAngle">--</span>°</div>
-            </div>
-            
-            <table id="ballisticTable">
-                <thead>
-                    <tr>
-                        <th>Range (m)</th>
-                        <th>Elevation (mils UP)</th>
-                        <th>Bullet Drift @ 10mph R→L<br>(mils LEFT)</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                </tbody>
-            </table>
-            <p style="color: #ff0; margin-top: 10px; font-size: 0.9em;">⚠️ Drift values show bullet movement. Aim OPPOSITE direction to compensate (R→L wind = aim RIGHT).</p>
-        </div>
+        <div id="modalContent"></div>
     </div>
     
-    <div id="mathModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; padding:40px; overflow-y:auto;">
-        <div id="modalContent">
-            <button id="closeMathModal">Close</button>
-            <h2 style="clear:both;">📚 Ballistic Math Guide</h2>
-            
-            <div style="color: #fff; line-height: 1.6; margin-top: 20px;">
-                <h3 style="color: #0ff; margin-top: 20px;">1. Basic Ballistic Trajectory</h3>
-                <p>Bullets don't travel in a straight line - they follow a parabolic arc due to gravity. The farther the target, the more the bullet drops. This is why we need <strong>elevation/dope</strong> adjustments.</p>
-                
-                <h3 style="color: #0ff; margin-top: 20px;">2. Angle Compensation (Cosine Rule)</h3>
-                <p><strong>Formula:</strong> Effective Range = Actual Distance × cos(angle)</p>
-                <p>When shooting uphill (+) or downhill (-), gravity affects the bullet less than at flat angles. A 1000m shot at 20° uphill has an <em>effective range</em> of 1000 × cos(20°) ≈ 940m for drop calculation.</p>
-                <p><strong>Why?</strong> Only the horizontal component of gravity affects the bullet's drop. Use the ballistic table value for the <em>effective range</em>, not actual distance.</p>
-                
-                <h3 style="color: #0ff; margin-top: 20px;">3. Wind Drift</h3>
-                <p><strong>Formula:</strong> Drift Correction = -1 × Table Drift @ 10mph × (Actual Wind / 10)</p>
-                <p>Wind pushes the bullet in the direction it's blowing. To compensate, you must aim <em>into the wind</em> (opposite direction).</p>
-                <p><strong>Example:</strong> Wind blowing Right → Left at 10mph:</p>
-                <ul style="margin-left: 20px;">
-                    <li>Bullet will drift LEFT (wind pushes it left)</li>
-                    <li>To compensate, aim RIGHT (into the wind)</li>
-                    <li>If table shows 2.0 mils drift, your correction is 2.0 mils RIGHT</li>
-                </ul>
-                <p><strong>Important:</strong> Ballistic tables show how much the bullet drifts due to wind. Your shooting correction must be in the <strong>opposite direction</strong> to compensate for that drift.</p>
-                <p>If wind is 5mph, multiply by 0.5. If 15mph, multiply by 1.5.</p>
-                <p><strong>Full-value wind:</strong> Wind blowing perpendicular (90°) to the bullet path has maximum effect. In this game, all wind is right-to-left crosswind.</p>
-                
-                <h3 style="color: #0ff; margin-top: 20px;">4. Temperature Effects</h3>
-                <p>Standard atmosphere is 59°F. In this simulation:</p>
-                <ul style="margin-left: 20px;">
-                    <li><strong>Hot air (>59°F):</strong> Less dense → less drag → bullet flies slightly faster/flatter (minor effect in game)</li>
-                    <li><strong>Cold air (<59°F):</strong> Denser → more drag → bullet drops slightly more</li>
-                </ul>
-                <p><em>For simplicity, this game uses standard tables. Real snipers adjust ~1% per 15°F deviation.</em></p>
-                
-                <h3 style="color: #0ff; margin-top: 20px;">5. Altitude/Pressure Effects</h3>
-                <p>Standard altitude is sea level (0 ft). Higher altitudes have thinner air:</p>
-                <ul style="margin-left: 20px;">
-                    <li><strong>Higher altitude:</strong> Less drag → flatter trajectory → slightly less drop</li>
-                    <li><strong>Lower altitude:</strong> More drag → more drop</li>
-                </ul>
-                <p><em>Real impact: ~5% change at 5000ft. This game uses standard tables for learning core concepts.</em></p>
-                
-                <h3 style="color: #0ff; margin-top: 20px;">6. Humidity Effects</h3>
-                <p>Humid air is actually <em>less dense</em> than dry air (water vapor is lighter than nitrogen/oxygen). Effect is minor (~1%) and often negligible compared to temp/altitude.</p>
-                
-                <h3 style="color: #0ff; margin-top: 20px;">7. Linear Interpolation</h3>
-                <p>Ballistic tables show data every 100m. For distances between table values:</p>
-                <p><strong>Formula:</strong> Value = Lower + (Upper - Lower) × (Distance - Lower Range) / (Range Difference)</p>
-                <p><strong>Example:</strong> 750m with .308 Winchester (table shows 700m = 3.3 mils, 800m = 4.6 mils):</p>
-                <p>Dope = 3.3 + (4.6 - 3.3) × (750 - 700) / (800 - 700) = 3.3 + 1.3 × 0.5 = 3.95 mils</p>
-                
-                <h3 style="color: #0ff; margin-top: 20px;">8. Step-by-Step Solution Process</h3>
-                <ol style="margin-left: 20px;">
-                    <li>Apply angle compensation: Effective Range = Distance × cos(angle)</li>
-                    <li>Interpolate elevation from ballistic table at effective range</li>
-                    <li>Interpolate drift from ballistic table at effective range</li>
-                    <li>Scale drift for actual wind: Table Drift × (Wind Speed / 10)</li>
-                    <li>Reverse direction for correction: Aim OPPOSITE to where bullet drifts (R→L wind = aim RIGHT)</li>
-                    <li>Apply corrections to scope and send it!</li>
-                </ol>
-                
-                <h3 style="color: #0ff; margin-top: 20px;">9. Mil vs MOA</h3>
-                <p>This game uses <strong>milliradians (mils)</strong>. One mil equals 1m of adjustment at 1000m distance, or 10cm at 100m. Some scopes use MOA (Minute of Angle), where 1 MOA ≈ 1 inch at 100 yards.</p>
-            </div>
-        </div>
+    <div id="mathModal">
+        <div id="mathModalContent"></div>
     </div>
     
-    <div id="resultsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; padding:40px; overflow-y:auto;">
-        <div id="modalContent">
-            <button id="closeResultsModal">Close</button>
-            <h2 style="clear:both;">📊 Shot Results History</h2>
-            <table style="margin-top: 20px;">
-                <thead>
-                    <tr>
-                        <th>Round</th>
-                        <th>Distance</th>
-                        <th>Caliber</th>
-                        <th>Error (mils)</th>
-                        <th>Result</th>
-                    </tr>
-                </thead>
-                <tbody id="resultsTableBody">
-                    <tr><td colspan="5" style="text-align:center; color:#aaa;">No shots fired yet</td></tr>
-                </tbody>
-            </table>
-            <div style="margin-top: 20px; padding: 15px; border: 2px solid #0f0; border-radius: 5px;">
-                <h3 style="color: #ff0;">Current Game Stats</h3>
-                <div class="dataRow">Rounds Completed: <span id="resultsRounds">0</span>/10</div>
-                <div class="dataRow">Total Error: <span id="resultsTotalError">0.00</span> mils</div>
-                <div class="dataRow">Average Error: <span id="resultsAvgError">--</span> mils</div>
-                <div class="dataRow">Perfect Hits: <span id="resultsPerfectHits">0</span></div>
-            </div>
-        </div>
+    <div id="resultsModal">
+        <div id="resultsModalContent"></div>
     </div>
 
     <script>
-        // Ballistic Data
+        // ============================================================================
+        // CONSTANTS AND CONFIGURATION
+        // ============================================================================
+        
+        const GAME_CONSTANTS = {
+            // Distance ranges
+            MIN_DISTANCE: 300,
+            MAX_DISTANCE: 1200,
+            
+            // Target sizes
+            TARGET_BASE_SIZE: 50,
+            TARGET_MIN_SCALE: 0.7,
+            TARGET_MAX_SCALE: 1.5,
+            
+            // Scope settings
+            SCOPE_MIL_SPACING: 30,
+            SCOPE_TARGET_BASE_SIZE: 60,
+            SCOPE_RADIUS_FACTOR: 0.45,
+            
+            // Hit detection
+            PERFECT_HIT_THRESHOLD: 0.3,
+            HIT_THRESHOLD: 1.0,
+            
+            // Animation
+            ANIMATION_DURATION: 60,
+            SCOPE_PAN_SPEED: 0.2,
+            
+            // Weather
+            MAX_CLOUDS: 5,
+            MAX_BIRDS: 3,
+            MAX_DUST_PARTICLES: 30,
+            
+            // Landscape layers
+            LANDSCAPE_SKY_HEIGHT: 0.35,
+            LANDSCAPE_GROUND_START: 0.82,
+            
+            // Wind sock
+            WINDSOCK_X_POSITION: 0.85,
+            WINDSOCK_Y_POSITION: 0.55,
+            
+            // Storage keys
+            STORAGE_HIGH_SCORE: 'spotterHighScore',
+            STORAGE_NOTEPAD: 'spotterNotepad',
+            STORAGE_SETTINGS: 'spotterSettings'
+        };
+        
+        const COLORS = {
+            // Time of day colors
+            sky: {
+                morning: { top: '#FFB366', bottom: '#87CEEB' },
+                noon: { top: '#87CEEB', bottom: '#B0E0E6' },
+                evening: { top: '#FF6B4A', bottom: '#8B4789' },
+                night: { top: '#0a0a2e', bottom: '#1a1a3e' }
+            },
+            
+            // Season colors
+            foliage: {
+                spring: { dark: '#2F8F2F', medium: '#4AA54A', light: '#6BC66B' },
+                summer: { dark: '#2F4F2F', medium: '#4A5D23', light: '#6B8E23' },
+                autumn: { dark: '#8B4513', medium: '#CD853F', light: '#DAA520' },
+                winter: { dark: '#4F6F7F', medium: '#708090', light: '#778899' }
+            },
+            
+            ground: {
+                spring: { top: '#7BC67B', bottom: '#5FA65F' },
+                summer: { top: '#8B7355', bottom: '#654321' },
+                autumn: { top: '#A0826D', bottom: '#8B7355' },
+                winter: { top: '#E0E8F0', bottom: '#C0D0E0' }
+            }
+        };
+        
+        // ============================================================================
+        // BALLISTIC DATA
+        // ============================================================================
+        
         const ballisticData = {
             '.308 Winchester (175gr M118LR)': [
                 {range: 100, elev: 0.0, drift10: 0.0},
@@ -604,10 +939,7 @@
                 {range: 900, elev: 6.5, drift10: 1.2},
                 {range: 1000, elev: 7.7, drift10: 1.4},
                 {range: 1100, elev: 8.9, drift10: 1.5},
-                {range: 1200, elev: 10.3, drift10: 1.7},
-                {range: 1300, elev: 11.8, drift10: 1.9},
-                {range: 1400, elev: 13.4, drift10: 2.1},
-                {range: 1500, elev: 15.1, drift10: 2.4}
+                {range: 1200, elev: 10.3, drift10: 1.7}
             ],
             '6.5 Creedmoor (140gr ELD-M)': [
                 {range: 100, elev: 0.0, drift10: 0.0},
@@ -624,8 +956,19 @@
                 {range: 1200, elev: 11.0, drift10: 4.3}
             ]
         };
-
-        // Game State
+        
+        // ============================================================================
+        // ENVIRONMENT STATE (for random selections)
+        // ============================================================================
+        
+        // Cache for current random selections (changes each round)
+        let currentTimeOfDay = 'noon';
+        let currentSeason = 'summer';
+        
+        // ============================================================================
+        // GAME STATE
+        // ============================================================================
+        
         let gameState = {
             round: 1,
             totalError: 0,
@@ -641,15 +984,33 @@
                 targetOffsetX: 0,
                 targetOffsetY: 0,
                 animating: false
+            },
+            settings: {
+                reticleType: 'mildot',
+                reticleColor: '#0f0',
+                targetType: 'bullseye',
+                timeOfDay: 'random',
+                season: 'random',
+                weatherEffects: true,
+                soundEffects: true,
+                masterVolume: 0.7
+            },
+            weather: {
+                clouds: [],
+                birds: [],
+                dustParticles: []
             }
         };
-
-        // Canvas setup
+        
+        // ============================================================================
+        // CANVAS SETUP
+        // ============================================================================
+        
         const mainCanvas = document.getElementById('mainCanvas');
         const mainCtx = mainCanvas.getContext('2d');
         const scopeCanvas = document.getElementById('scopeCanvas');
         const scopeCtx = scopeCanvas.getContext('2d');
-
+        
         function resizeCanvas() {
             mainCanvas.width = mainCanvas.offsetWidth;
             mainCanvas.height = mainCanvas.offsetHeight;
@@ -658,11 +1019,653 @@
             drawMainView();
             drawScope();
         }
-
+        
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
-
-        // Generate targets for round
+        
+        // ============================================================================
+        // SOUND SYSTEM
+        // ============================================================================
+        
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        const soundEffects = {
+            shot: null,
+            hit: null,
+            miss: null,
+            click: null,
+            whoosh: null,
+            wind: null
+        };
+        
+        function createShotSound() {
+            const duration = 0.3;
+            const sampleRate = audioContext.sampleRate;
+            const buffer = audioContext.createBuffer(1, duration * sampleRate, sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            for (let i = 0; i < buffer.length; i++) {
+                const t = i / sampleRate;
+                const envelope = Math.exp(-t * 8);
+                const noise = (Math.random() * 2 - 1) * envelope;
+                const bass = Math.sin(2 * Math.PI * 60 * t) * envelope * 0.5;
+                data[i] = (noise + bass) * 0.3;
+            }
+            
+            return buffer;
+        }
+        
+        function createHitSound() {
+            const duration = 0.2;
+            const sampleRate = audioContext.sampleRate;
+            const buffer = audioContext.createBuffer(1, duration * sampleRate, sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            for (let i = 0; i < buffer.length; i++) {
+                const t = i / sampleRate;
+                const envelope = Math.exp(-t * 12);
+                const tone = Math.sin(2 * Math.PI * 800 * t) * envelope;
+                data[i] = tone * 0.2;
+            }
+            
+            return buffer;
+        }
+        
+        function createMissSound() {
+            const duration = 0.15;
+            const sampleRate = audioContext.sampleRate;
+            const buffer = audioContext.createBuffer(1, duration * sampleRate, sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            for (let i = 0; i < buffer.length; i++) {
+                const t = i / sampleRate;
+                const envelope = Math.exp(-t * 15);
+                const tone = Math.sin(2 * Math.PI * 200 * t) * envelope;
+                data[i] = tone * 0.15;
+            }
+            
+            return buffer;
+        }
+        
+        function createClickSound() {
+            const duration = 0.05;
+            const sampleRate = audioContext.sampleRate;
+            const buffer = audioContext.createBuffer(1, duration * sampleRate, sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            for (let i = 0; i < buffer.length; i++) {
+                const t = i / sampleRate;
+                const envelope = Math.exp(-t * 50);
+                data[i] = (Math.random() * 2 - 1) * envelope * 0.1;
+            }
+            
+            return buffer;
+        }
+        
+        function createWhooshSound() {
+            const duration = 0.4;
+            const sampleRate = audioContext.sampleRate;
+            const buffer = audioContext.createBuffer(1, duration * sampleRate, sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            for (let i = 0; i < buffer.length; i++) {
+                const t = i / sampleRate;
+                const envelope = Math.sin(Math.PI * t / duration);
+                const noise = (Math.random() * 2 - 1) * envelope;
+                data[i] = noise * 0.08;
+            }
+            
+            return buffer;
+        }
+        
+        function playSound(soundName) {
+            if (!gameState.settings.soundEffects || !soundEffects[soundName]) return;
+            
+            const source = audioContext.createBufferSource();
+            source.buffer = soundEffects[soundName];
+            
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = gameState.settings.masterVolume;
+            
+            source.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            source.start();
+        }
+        
+        async function initSounds() {
+            soundEffects.shot = createShotSound();
+            soundEffects.hit = createHitSound();
+            soundEffects.miss = createMissSound();
+            soundEffects.click = createClickSound();
+            soundEffects.whoosh = createWhooshSound();
+        }
+        
+        // ============================================================================
+        // TUTORIAL SYSTEM
+        // ============================================================================
+        
+        const tutorialSteps = [
+            {
+                title: "Welcome to Spotter's Call!",
+                content: `
+                    <p>This training simulator teaches you the mathematics of long-range precision shooting.</p>
+                    <p>You'll learn to calculate:</p>
+                    <ul style="margin-left: 30px; margin-top: 10px;">
+                        <li>Bullet drop compensation (elevation/dope)</li>
+                        <li>Wind drift correction (windage)</li>
+                        <li>Angle compensation using cosine</li>
+                    </ul>
+                    <p style="margin-top: 15px;">Let's get started!</p>
+                `
+            },
+            {
+                title: "Understanding the Interface",
+                content: `
+                    <h3 style="color: #0ff;">Main View (Top)</h3>
+                    <p>Shows the target in the landscape. The target position and size change based on distance.</p>
+                    
+                    <h3 style="color: #0ff; margin-top: 15px;">Scope View (Bottom)</h3>
+                    <p>Your rifle scope with mil-dot reticle. The target moves as you adjust your dope and drift.</p>
+                    
+                    <h3 style="color: #0ff; margin-top: 15px;">Control Panel (Left)</h3>
+                    <p>Environmental data, ballistic table, and your solution inputs.</p>
+                `
+            },
+            {
+                title: "Step 1: Read Environmental Data",
+                content: `
+                    <p>For each target, you'll see:</p>
+                    <ul style="margin-left: 30px; margin-top: 10px;">
+                        <li><strong>Distance:</strong> How far away the target is (meters)</li>
+                        <li><strong>Wind:</strong> Wind speed and direction (mph)</li>
+                        <li><strong>Angle:</strong> Uphill (+) or downhill (-) shot angle</li>
+                        <li><strong>Temperature, Humidity, Altitude:</strong> Atmospheric conditions</li>
+                    </ul>
+                    <p style="margin-top: 15px; color: #ff0;">These factors affect where your bullet will hit!</p>
+                `
+            },
+            {
+                title: "Step 2: Check the Ballistic Table",
+                content: `
+                    <p>Click "View Ballistic Table" to see your ammunition's trajectory data.</p>
+                    
+                    <p style="margin-top: 15px;">The table shows:</p>
+                    <ul style="margin-left: 30px; margin-top: 10px;">
+                        <li><strong>Elevation:</strong> How many mils UP to aim</li>
+                        <li><strong>Drift @ 10mph:</strong> How much the bullet drifts LEFT in a 10mph R→L wind</li>
+                    </ul>
+                    
+                    <p style="margin-top: 15px; color: #0ff;">Tip: Use linear interpolation between table values for exact distances!</p>
+                `
+            },
+            {
+                title: "Step 3: Calculate Angle Compensation",
+                content: `
+                    <p><strong>Formula:</strong> Effective Range = Actual Distance × cos(angle)</p>
+                    
+                    <p style="margin-top: 15px;">Why? Gravity only acts on the <em>horizontal</em> component of bullet travel.</p>
+                    
+                    <p style="margin-top: 15px;"><strong>Example:</strong></p>
+                    <p>Target at 600m with +20° angle:</p>
+                    <p style="margin-left: 20px;">Effective Range = 600 × cos(20°) = 600 × 0.94 = 564m</p>
+                    <p style="margin-left: 20px;">Use 564m in the ballistic table!</p>
+                `
+            },
+            {
+                title: "Step 4: Calculate Wind Drift",
+                content: `
+                    <p><strong>Formula:</strong> Drift = Table Drift × (Actual Wind / 10mph)</p>
+                    
+                    <p style="margin-top: 15px;"><strong>Critical:</strong> Aim <em>into</em> the wind (opposite direction)!</p>
+                    
+                    <ul style="margin-left: 30px; margin-top: 10px;">
+                        <li>R→L wind pushes bullet LEFT → Aim RIGHT</li>
+                        <li>L→R wind pushes bullet RIGHT → Aim LEFT</li>
+                    </ul>
+                    
+                    <p style="margin-top: 15px;"><strong>Example:</strong></p>
+                    <p>12mph R→L wind, table shows 2.0 mils drift:</p>
+                    <p style="margin-left: 20px;">2.0 mils × (12/10) = 2.4 mils RIGHT</p>
+                `
+            },
+            {
+                title: "Step 5: Enter Your Solution",
+                content: `
+                    <p>Enter your calculated values:</p>
+                    <ul style="margin-left: 30px; margin-top: 10px;">
+                        <li><strong>Dope:</strong> Elevation in mils UP</li>
+                        <li><strong>Drift:</strong> Windage in mils LEFT or RIGHT</li>
+                    </ul>
+                    
+                    <p style="margin-top: 15px; color: #0ff;"><strong>Keyboard Shortcuts:</strong></p>
+                    <ul style="margin-left: 30px;">
+                        <li>↑↓ arrows: Adjust dope</li>
+                        <li>←→ arrows: Adjust drift</li>
+                        <li>Enter: Send shot</li>
+                    </ul>
+                    
+                    <p style="margin-top: 15px;">Watch the scope view update in real-time as you adjust!</p>
+                `
+            },
+            {
+                title: "Step 6: Take the Shot!",
+                content: `
+                    <p>When you're confident in your solution, click "SEND IT" or press Enter.</p>
+                    
+                    <p style="margin-top: 15px;">You'll see:</p>
+                    <ul style="margin-left: 30px; margin-top: 10px;">
+                        <li>Bullet trajectory animation in scope</li>
+                        <li>Impact point marked</li>
+                        <li>Detailed results showing your accuracy</li>
+                    </ul>
+                    
+                    <p style="margin-top: 15px; color: #ff0;"><strong>Scoring:</strong></p>
+                    <ul style="margin-left: 30px;">
+                        <li>&lt; 0.3 mils error = Perfect Hit! 🎯</li>
+                        <li>&lt; 1.0 mil error = Hit</li>
+                        <li>&gt; 1.0 mil error = Miss</li>
+                    </ul>
+                `
+            },
+            {
+                title: "Tips for Success",
+                content: `
+                    <h3 style="color: #0ff;">Use the Notepad</h3>
+                    <p>The notepad auto-saves your calculations. Write out your work!</p>
+                    
+                    <h3 style="color: #0ff; margin-top: 15px;">Practice Makes Perfect</h3>
+                    <p>Start with closer targets and no wind to learn the basics.</p>
+                    
+                    <h3 style="color: #0ff; margin-top: 15px;">Check Your Math</h3>
+                    <p>After each shot, review the "Correct Solution" to learn from mistakes.</p>
+                    
+                    <h3 style="color: #0ff; margin-top: 15px;">Customize Your Experience</h3>
+                    <p>Use Settings to change reticle style, weather effects, time of day, and more!</p>
+                `
+            },
+            {
+                title: "Ready to Begin!",
+                content: `
+                    <p style="font-size: 1.2em; color: #0f0;">You're all set!</p>
+                    
+                    <p style="margin-top: 15px;">Remember:</p>
+                    <ol style="margin-left: 30px; margin-top: 10px;">
+                        <li>Read environmental data</li>
+                        <li>Check ballistic table</li>
+                        <li>Calculate angle compensation</li>
+                        <li>Calculate wind drift</li>
+                        <li>Enter solution and SEND IT!</li>
+                    </ol>
+                    
+                    <p style="margin-top: 20px; color: #ff0;">Good luck, shooter!</p>
+                    
+                    <p style="margin-top: 15px; font-size: 0.9em; color: #888;">
+                        You can revisit this tutorial anytime from the Tutorial button in the header.
+                    </p>
+                `
+            }
+        ];
+        
+        let currentTutorialStep = 0;
+        
+        function showTutorial() {
+            currentTutorialStep = 0;
+            renderTutorialStep();
+            document.getElementById('tutorialOverlay').style.display = 'block';
+            playSound('click');
+        }
+        
+        function renderTutorialStep() {
+            const step = tutorialSteps[currentTutorialStep];
+            const content = document.getElementById('tutorialContent');
+            
+            content.innerHTML = `
+                <h2 style="color: #ff0; margin-bottom: 20px;">${step.title}</h2>
+                <div style="color: #fff; line-height: 1.6;">
+                    ${step.content}
+                </div>
+                <div class="tutorialProgress">
+                    Step ${currentTutorialStep + 1} of ${tutorialSteps.length}
+                </div>
+                <div class="tutorialNav">
+                    <button onclick="prevTutorialStep()" ${currentTutorialStep === 0 ? 'disabled' : ''}>
+                        ← Previous
+                    </button>
+                    ${currentTutorialStep < tutorialSteps.length - 1 
+                        ? '<button onclick="nextTutorialStep()">Next →</button>'
+                        : '<button onclick="closeTutorial()">Start Playing! 🎯</button>'
+                    }
+                </div>
+                <button onclick="closeTutorial()" style="margin-top: 10px; background: #666;">
+                    Skip Tutorial
+                </button>
+            `;
+        }
+        
+        function nextTutorialStep() {
+            if (currentTutorialStep < tutorialSteps.length - 1) {
+                currentTutorialStep++;
+                renderTutorialStep();
+                playSound('whoosh');
+            }
+        }
+        
+        function prevTutorialStep() {
+            if (currentTutorialStep > 0) {
+                currentTutorialStep--;
+                renderTutorialStep();
+                playSound('whoosh');
+            }
+        }
+        
+        function closeTutorial() {
+            document.getElementById('tutorialOverlay').style.display = 'none';
+            playSound('click');
+        }
+        
+        // ============================================================================
+        // SETTINGS MANAGEMENT
+        // ============================================================================
+        
+        function loadSettings() {
+            const saved = localStorage.getItem(GAME_CONSTANTS.STORAGE_SETTINGS);
+            if (saved) {
+                gameState.settings = { ...gameState.settings, ...JSON.parse(saved) };
+                applySettingsToUI();
+            }
+        }
+        
+        function saveSettings() {
+            localStorage.setItem(GAME_CONSTANTS.STORAGE_SETTINGS, JSON.stringify(gameState.settings));
+        }
+        
+        function applySettingsToUI() {
+            document.getElementById('reticleType').value = gameState.settings.reticleType;
+            document.getElementById('reticleColor').value = gameState.settings.reticleColor;
+            document.getElementById('targetType').value = gameState.settings.targetType;
+            document.getElementById('timeOfDay').value = gameState.settings.timeOfDay;
+            document.getElementById('season').value = gameState.settings.season;
+            document.getElementById('weatherEffects').checked = gameState.settings.weatherEffects;
+            document.getElementById('soundEffects').checked = gameState.settings.soundEffects;
+            document.getElementById('masterVolume').value = gameState.settings.masterVolume * 100;
+            document.getElementById('volumeDisplay').textContent = Math.round(gameState.settings.masterVolume * 100) + '%';
+        }
+        
+        function applySettings() {
+            gameState.settings.reticleType = document.getElementById('reticleType').value;
+            gameState.settings.reticleColor = document.getElementById('reticleColor').value;
+            gameState.settings.targetType = document.getElementById('targetType').value;
+            gameState.settings.timeOfDay = document.getElementById('timeOfDay').value;
+            gameState.settings.season = document.getElementById('season').value;
+            gameState.settings.weatherEffects = document.getElementById('weatherEffects').checked;
+            gameState.settings.soundEffects = document.getElementById('soundEffects').checked;
+            gameState.settings.masterVolume = document.getElementById('masterVolume').value / 100;
+            
+            saveSettings();
+            
+            // Reinitialize weather
+            initWeather();
+            
+            // Redraw
+            drawMainView();
+            drawScope();
+            
+            // Close modal
+            document.getElementById('settingsModal').style.display = 'none';
+            playSound('click');
+        }
+        
+        // Volume slider live update
+        document.addEventListener('DOMContentLoaded', () => {
+            const volumeSlider = document.getElementById('masterVolume');
+            const volumeDisplay = document.getElementById('volumeDisplay');
+            if (volumeSlider) {
+                volumeSlider.addEventListener('input', (e) => {
+                    volumeDisplay.textContent = e.target.value + '%';
+                });
+            }
+        });
+        
+        // ============================================================================
+        // WEATHER SYSTEM
+        // ============================================================================
+        
+        function initWeather() {
+            if (!gameState.settings.weatherEffects) {
+                gameState.weather = { clouds: [], birds: [], dustParticles: [] };
+                return;
+            }
+            
+            // Clouds
+            gameState.weather.clouds = [];
+            for (let i = 0; i < GAME_CONSTANTS.MAX_CLOUDS; i++) {
+                gameState.weather.clouds.push({
+                    x: Math.random(),
+                    y: Math.random() * 0.3,
+                    width: 0.15 + Math.random() * 0.15,
+                    height: 0.05 + Math.random() * 0.05,
+                    speed: 0.00005 + Math.random() * 0.00015
+                });
+            }
+            
+            // Birds
+            gameState.weather.birds = [];
+            for (let i = 0; i < GAME_CONSTANTS.MAX_BIRDS; i++) {
+                gameState.weather.birds.push({
+                    x: Math.random(),
+                    y: 0.2 + Math.random() * 0.3,
+                    wingPhase: Math.random() * Math.PI * 2,
+                    speed: 0.0002 + Math.random() * 0.0003
+                });
+            }
+            
+            // Dust particles
+            gameState.weather.dustParticles = [];
+            for (let i = 0; i < GAME_CONSTANTS.MAX_DUST_PARTICLES; i++) {
+                gameState.weather.dustParticles.push({
+                    x: Math.random(),
+                    y: 0.7 + Math.random() * 0.3,
+                    size: 1 + Math.random() * 2,
+                    speed: 0.0001 + Math.random() * 0.0002,
+                    opacity: 0.1 + Math.random() * 0.3
+                });
+            }
+        }
+        
+        function updateWeather() {
+            if (!gameState.settings.weatherEffects) return;
+            
+            // Update clouds
+            gameState.weather.clouds.forEach(cloud => {
+                cloud.x += cloud.speed;
+                if (cloud.x > 1.2) cloud.x = -0.2;
+            });
+            
+            // Update birds
+            gameState.weather.birds.forEach(bird => {
+                bird.x += bird.speed;
+                bird.wingPhase += 0.1;
+                if (bird.x > 1.1) {
+                    bird.x = -0.1;
+                    bird.y = 0.2 + Math.random() * 0.3;
+                }
+            });
+            
+            // Update dust
+            const t = gameState.currentTarget;
+            const windSpeed = t ? t.wind / 15 : 0.5;
+            const windDir = t && t.windDir === 'L->R' ? 1 : -1;
+            
+            gameState.weather.dustParticles.forEach(particle => {
+                particle.x += particle.speed * windSpeed * windDir;
+                if (particle.x > 1.1) particle.x = -0.1;
+                if (particle.x < -0.1) particle.x = 1.1;
+            });
+        }
+        
+        function drawWeather(ctx, w, h) {
+            if (!gameState.settings.weatherEffects) return;
+            
+            // Draw clouds
+            gameState.weather.clouds.forEach(cloud => {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.beginPath();
+                const cx = cloud.x * w;
+                const cy = cloud.y * h;
+                const cw = cloud.width * w;
+                const ch = cloud.height * h;
+                
+                // Draw 3 overlapping circles for cloud shape
+                ctx.arc(cx, cy, ch, 0, Math.PI * 2);
+                ctx.arc(cx + cw * 0.3, cy, ch * 1.2, 0, Math.PI * 2);
+                ctx.arc(cx + cw * 0.6, cy, ch, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Draw birds
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            gameState.weather.birds.forEach(bird => {
+                const bx = bird.x * w;
+                const by = bird.y * h;
+                const wingAngle = Math.sin(bird.wingPhase) * 0.3;
+                
+                // Simple V-shape bird
+                ctx.beginPath();
+                ctx.moveTo(bx - 8, by);
+                ctx.lineTo(bx, by - 5 + wingAngle * 5);
+                ctx.moveTo(bx, by - 5 + wingAngle * 5);
+                ctx.lineTo(bx + 8, by);
+                ctx.stroke();
+            });
+            
+            // Draw dust
+            gameState.weather.dustParticles.forEach(particle => {
+                ctx.fillStyle = `rgba(210, 180, 140, ${particle.opacity})`;
+                ctx.beginPath();
+                ctx.arc(particle.x * w, particle.y * h, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+        
+        // ============================================================================
+        // NOTEPAD PERSISTENCE
+        // ============================================================================
+        
+        function loadNotepad() {
+            const saved = localStorage.getItem(GAME_CONSTANTS.STORAGE_NOTEPAD);
+            if (saved) {
+                document.getElementById('notepad').value = saved;
+            }
+        }
+        
+        function saveNotepad() {
+            const content = document.getElementById('notepad').value;
+            localStorage.setItem(GAME_CONSTANTS.STORAGE_NOTEPAD, content);
+        }
+        
+        // Auto-save notepad on input
+        document.addEventListener('DOMContentLoaded', () => {
+            const notepad = document.getElementById('notepad');
+            if (notepad) {
+                notepad.addEventListener('input', saveNotepad);
+            }
+        });
+        
+        // ============================================================================
+        // KEYBOARD SHORTCUTS
+        // ============================================================================
+        
+        document.addEventListener('keydown', (e) => {
+            // Don't interfere if user is typing in a text field
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+                if (e.key !== 'Enter') return;
+            }
+            
+            const dopeInput = document.getElementById('dopeInput');
+            const driftInput = document.getElementById('driftInput');
+            const sendButton = document.getElementById('sendButton');
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                    e.preventDefault();
+                    if (dopeInput) {
+                        dopeInput.value = (parseFloat(dopeInput.value) || 0) + 0.1;
+                        dopeInput.dispatchEvent(new Event('input'));
+                        playSound('click');
+                    }
+                    break;
+                    
+                case 'ArrowDown':
+                    e.preventDefault();
+                    if (dopeInput) {
+                        dopeInput.value = Math.max(0, (parseFloat(dopeInput.value) || 0) - 0.1);
+                        dopeInput.dispatchEvent(new Event('input'));
+                        playSound('click');
+                    }
+                    break;
+                    
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    if (driftInput) {
+                        const currentDir = document.querySelector('input[name="driftDir"]:checked').value;
+                        if (currentDir === 'R') {
+                            document.querySelector('input[name="driftDir"][value="L"]').checked = true;
+                            document.querySelector('input[name="driftDir"][value="L"]').dispatchEvent(new Event('change'));
+                        }
+                        playSound('click');
+                    }
+                    break;
+                    
+                case 'ArrowRight':
+                    e.preventDefault();
+                    if (driftInput) {
+                        const currentDir = document.querySelector('input[name="driftDir"]:checked').value;
+                        if (currentDir === 'L') {
+                            document.querySelector('input[name="driftDir"][value="R"]').checked = true;
+                            document.querySelector('input[name="driftDir"][value="R"]').dispatchEvent(new Event('change'));
+                        }
+                        playSound('click');
+                    }
+                    break;
+                    
+                case 'Enter':
+                    e.preventDefault();
+                    if (sendButton && !sendButton.disabled && !gameState.shotFired) {
+                        sendButton.click();
+                    }
+                    break;
+                    
+                case 'Escape':
+                    // Close any open modals
+                    document.getElementById('tutorialOverlay').style.display = 'none';
+                    document.getElementById('settingsModal').style.display = 'none';
+                    document.getElementById('ballisticModal').style.display = 'none';
+                    document.getElementById('modal').style.display = 'none';
+                    document.getElementById('mathModal').style.display = 'none';
+                    document.getElementById('resultsModal').style.display = 'none';
+                    playSound('click');
+                    break;
+            }
+        });
+        
+        // ============================================================================
+        // TARGET GENERATION
+        // ============================================================================
+        
+        function getSeasonalTemperature() {
+            // Temperature ranges by season (in Fahrenheit)
+            const tempRanges = {
+                spring: { min: 50, max: 70 },   // Mild spring temps
+                summer: { min: 70, max: 95 },   // Hot summer temps
+                autumn: { min: 45, max: 68 },   // Cool autumn temps
+                winter: { min: 20, max: 45 }    // Cold winter temps
+            };
+            
+            const range = tempRanges[currentSeason];
+            return Math.floor(Math.random() * (range.max - range.min) + range.min);
+        }
+        
         function generateTargets() {
             const difficulties = [
                 {dist: [300, 500], wind: [3, 6], angle: [-5, 5]},
@@ -678,6 +1681,7 @@
             ];
             
             const diff = difficulties[Math.min(gameState.round - 1, 9)];
+            const windDir = Math.random() > 0.5 ? 'R->L' : 'L->R';
             
             return {
                 id: gameState.round,
@@ -685,301 +1689,527 @@
                 y: Math.random() * 0.4 + 0.3,
                 distance: Math.floor(Math.random() * (diff.dist[1] - diff.dist[0]) + diff.dist[0]),
                 wind: Math.floor(Math.random() * (diff.wind[1] - diff.wind[0]) + diff.wind[0]),
-                temp: Math.floor(Math.random() * 30 + 45),
+                windDir: windDir,
+                temp: getSeasonalTemperature(),
                 humidity: Math.floor(Math.random() * 40 + 40),
                 altitude: Math.floor(Math.random() * 3000 + 1000),
                 angle: Math.floor(Math.random() * (diff.angle[1] - diff.angle[0]) + diff.angle[0])
             };
         }
-
-        // Linear interpolation for ballistic data
+        
+        // ============================================================================
+        // BALLISTIC CALCULATIONS
+        // ============================================================================
+        
         function interpolateBallistics(caliber, distance) {
-            const data = ballisticData[caliber];
+            const table = ballisticData[caliber];
             
-            // Find bracketing points
-            let lower = data[0];
-            let upper = data[data.length - 1];
+            // Find bracketing entries
+            let lower = table[0];
+            let upper = table[table.length - 1];
             
-            for (let i = 0; i < data.length - 1; i++) {
-                if (distance >= data[i].range && distance <= data[i + 1].range) {
-                    lower = data[i];
-                    upper = data[i + 1];
+            for (let i = 0; i < table.length - 1; i++) {
+                if (distance >= table[i].range && distance <= table[i + 1].range) {
+                    lower = table[i];
+                    upper = table[i + 1];
                     break;
                 }
             }
             
-            if (distance <= data[0].range) return {elev: data[0].elev, drift10: data[0].drift10};
-            if (distance >= data[data.length - 1].range) return {elev: upper.elev, drift10: upper.drift10};
-            
             // Linear interpolation
-            const ratio = (distance - lower.range) / (upper.range - lower.range);
-            const elev = lower.elev + ratio * (upper.elev - lower.elev);
-            const drift10 = lower.drift10 + ratio * (upper.drift10 - lower.drift10);
+            if (lower.range === upper.range) {
+                return { elev: lower.elev, drift10: lower.drift10 };
+            }
             
-            return {elev, drift10};
+            const factor = (distance - lower.range) / (upper.range - lower.range);
+            const elev = lower.elev + (upper.elev - lower.elev) * factor;
+            const drift10 = lower.drift10 + (upper.drift10 - lower.drift10) * factor;
+            
+            return { elev, drift10 };
         }
-
-        // Calculate correct solution
+        
         function calculateSolution(target, caliber) {
-            // Angle compensation using cosine
+            // Angle compensation
             const angleRad = target.angle * Math.PI / 180;
             const effectiveRange = target.distance * Math.cos(angleRad);
             
-            // Get base ballistics for effective range
+            // Get ballistics
             const ballistics = interpolateBallistics(caliber, effectiveRange);
             
-            // Wind scaling (proportional to actual wind vs 10mph)
-            // Wind R→L means bullet drifts LEFT, so we need to aim RIGHT (negative drift)
+            // Wind correction
             const windFactor = target.wind / 10.0;
-            const drift = -ballistics.drift10 * windFactor; // Negative because we aim opposite to drift
+            let drift;
+            if (target.windDir === 'R->L') {
+                drift = -ballistics.drift10 * windFactor; // Negative = RIGHT
+            } else { // L->R
+                drift = ballistics.drift10 * windFactor; // Positive = LEFT
+            }
             
             return {
                 dope: ballistics.elev,
-                drift: drift, // Negative = RIGHT, Positive = LEFT
+                drift: drift,
                 effectiveRange: effectiveRange
             };
         }
-
-        // Draw main landscape view
+        
+        // ============================================================================
+        // HELPER FUNCTIONS FOR RANDOM SETTINGS
+        // ============================================================================
+        
+        function getActualTimeOfDay() {
+            if (gameState.settings.timeOfDay === 'random') {
+                const options = ['morning', 'noon', 'evening', 'night'];
+                return options[Math.floor(Math.random() * options.length)];
+            }
+            return gameState.settings.timeOfDay;
+        }
+        
+        function getActualSeason() {
+            if (gameState.settings.season === 'random') {
+                const options = ['spring', 'summer', 'autumn', 'winter'];
+                return options[Math.floor(Math.random() * options.length)];
+            }
+            return gameState.settings.season;
+        }
+        
+        function updateEnvironmentRandomness() {
+            currentTimeOfDay = getActualTimeOfDay();
+            currentSeason = getActualSeason();
+        }
+        
+        // ============================================================================
+        // DRAWING FUNCTIONS - MAIN VIEW
+        // ============================================================================
+        
         function drawMainView() {
             const w = mainCanvas.width;
             const h = mainCanvas.height;
             
-            // Sky gradient
-            const skyGrad = mainCtx.createLinearGradient(0, 0, 0, h);
-            skyGrad.addColorStop(0, '#87CEEB');
-            skyGrad.addColorStop(1, '#B0E0E6');
+            // Sky - varies by time of day
+            const skyColors = COLORS.sky[currentTimeOfDay];
+            const skyGrad = mainCtx.createLinearGradient(0, 0, 0, h * 0.5);
+            skyGrad.addColorStop(0, skyColors.top);
+            skyGrad.addColorStop(1, skyColors.bottom);
             mainCtx.fillStyle = skyGrad;
-            mainCtx.fillRect(0, 0, w, h);
+            mainCtx.fillRect(0, 0, w, h * GAME_CONSTANTS.LANDSCAPE_SKY_HEIGHT);
             
-            // Far distant hills (lightest)
-            mainCtx.fillStyle = '#8B9A8B';
-            mainCtx.beginPath();
-            mainCtx.moveTo(0, h * 0.45);
-            for (let x = 0; x < w; x += 30) {
-                mainCtx.lineTo(x, h * 0.45 + Math.sin(x * 0.008) * 35 + Math.cos(x * 0.015) * 20);
-            }
-            mainCtx.lineTo(w, h);
-            mainCtx.lineTo(0, h);
-            mainCtx.closePath();
-            mainCtx.fill();
+            // Update and draw weather
+            updateWeather();
+            drawWeather(mainCtx, w, h);
             
-            // Mid-distant hills
-            mainCtx.fillStyle = '#6B8E23';
-            mainCtx.beginPath();
-            mainCtx.moveTo(0, h * 0.55);
-            for (let x = 0; x < w; x += 40) {
-                mainCtx.lineTo(x, h * 0.55 + Math.sin(x * 0.01 + 2) * 40 + Math.cos(x * 0.02) * 25);
-            }
-            mainCtx.lineTo(w, h);
-            mainCtx.lineTo(0, h);
-            mainCtx.closePath();
-            mainCtx.fill();
+            // Hills - 5 layers for depth
+            const foliageColors = COLORS.foliage[currentSeason];
             
-            // Near hills
-            mainCtx.fillStyle = '#556B2F';
-            mainCtx.beginPath();
-            mainCtx.moveTo(0, h * 0.65);
-            for (let x = 0; x < w; x += 35) {
-                mainCtx.lineTo(x, h * 0.65 + Math.sin(x * 0.012 + 1) * 30 + Math.cos(x * 0.025) * 20);
-            }
-            mainCtx.lineTo(w, h);
-            mainCtx.lineTo(0, h);
-            mainCtx.closePath();
-            mainCtx.fill();
+            drawHillLayer(mainCtx, w, h, 0.15, foliageColors.dark, 0.01, 0);
+            drawHillLayer(mainCtx, w, h, 0.25, foliageColors.medium, 0.02, 100);
+            drawHillLayer(mainCtx, w, h, 0.40, foliageColors.light, 0.03, 200);
+            drawHillLayer(mainCtx, w, h, 0.60, '#6B8E23', 0.04, 300);
+            drawHillLayer(mainCtx, w, h, 0.75, '#556B2F', 0.05, 400);
             
-            // Near-ground rolling hills
-            mainCtx.fillStyle = '#4A5D23';
-            mainCtx.beginPath();
-            mainCtx.moveTo(0, h * 0.75);
-            for (let x = 0; x < w; x += 30) {
-                mainCtx.lineTo(x, h * 0.75 + Math.sin(x * 0.015 + 3) * 25);
-            }
-            mainCtx.lineTo(w, h);
-            mainCtx.lineTo(0, h);
-            mainCtx.closePath();
-            mainCtx.fill();
-            
-            // Ground/foreground
-            const groundGrad = mainCtx.createLinearGradient(0, h * 0.82, 0, h);
-            groundGrad.addColorStop(0, '#8B7355');
-            groundGrad.addColorStop(1, '#654321');
+            // Ground - varies by season
+            const groundColors = COLORS.ground[currentSeason];
+            const groundGrad = mainCtx.createLinearGradient(0, h * GAME_CONSTANTS.LANDSCAPE_GROUND_START, 0, h);
+            groundGrad.addColorStop(0, groundColors.top);
+            groundGrad.addColorStop(1, groundColors.bottom);
             mainCtx.fillStyle = groundGrad;
-            mainCtx.fillRect(0, h * 0.82, w, h * 0.18);
+            mainCtx.fillRect(0, h * GAME_CONSTANTS.LANDSCAPE_GROUND_START, w, h * 0.18);
             
-            // Add trees and bushes for visual interest
-            // Use deterministic positions based on target distance (so they don't randomly change)
-            const seed = gameState.currentTarget ? gameState.currentTarget.distance : 500;
+            // Vegetation and rocks
+            if (gameState.currentTarget) {
+                drawVegetation(mainCtx, w, h);
+            }
             
-            // Draw rocks first (in background)
+            // Windsock
+            drawWindsock(mainCtx, w, h);
+            
+            // Target
+            if (gameState.currentTarget) {
+                const t = gameState.currentTarget;
+                const distFactor = (t.distance - GAME_CONSTANTS.MIN_DISTANCE) / (GAME_CONSTANTS.MAX_DISTANCE - GAME_CONSTANTS.MIN_DISTANCE);
+                const yPos = 0.85 - distFactor * 0.40;
+                // Target scaling: 70px at 300m to 25px at 1200m
+                const size = GAME_CONSTANTS.TARGET_BASE_SIZE * (1.4 - distFactor * 0.9);
+                
+                drawTarget(t.x * w, yPos * h, size, true, t.id);
+            }
+        }
+        
+        function drawHillLayer(ctx, w, h, yPos, color, freq, offset) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(0, h * yPos);
+            for (let x = 0; x <= w; x += 20) {
+                const y = h * yPos + Math.sin(x * freq + offset) * 20;
+                ctx.lineTo(x, y);
+            }
+            ctx.lineTo(w, h);
+            ctx.lineTo(0, h);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        function drawVegetation(ctx, w, h) {
+            const seed = gameState.currentTarget.distance;
+            
+            // Rocks - positioned further back
             for (let i = 0; i < 5; i++) {
                 const rockX = ((seed * (i + 7) * 211) % w);
-                const rockY = h * 0.68 + ((seed * i * 97) % 80);
+                const rockY = h * 0.55 + ((seed * i * 97) % 60); // Moved up from 0.68
                 const rockSize = 15 + ((seed * i) % 20);
                 
-                // Rock shadow
-                mainCtx.fillStyle = 'rgba(0,0,0,0.2)';
-                mainCtx.beginPath();
-                mainCtx.ellipse(rockX + 3, rockY + rockSize * 0.6, rockSize * 0.8, rockSize * 0.3, 0, 0, Math.PI * 2);
-                mainCtx.fill();
+                ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                ctx.beginPath();
+                ctx.ellipse(rockX + 3, rockY + rockSize * 0.6, rockSize * 0.8, rockSize * 0.3, 0, 0, Math.PI * 2);
+                ctx.fill();
                 
-                // Rock
-                mainCtx.fillStyle = '#696969';
-                mainCtx.beginPath();
-                mainCtx.ellipse(rockX, rockY, rockSize, rockSize * 0.7, 0, 0, Math.PI * 2);
-                mainCtx.fill();
+                ctx.fillStyle = '#696969';
+                ctx.beginPath();
+                ctx.ellipse(rockX, rockY, rockSize, rockSize * 0.7, 0, 0, Math.PI * 2);
+                ctx.fill();
                 
-                // Rock highlight
-                mainCtx.fillStyle = '#808080';
-                mainCtx.beginPath();
-                mainCtx.ellipse(rockX - rockSize * 0.2, rockY - rockSize * 0.2, rockSize * 0.4, rockSize * 0.3, 0, 0, Math.PI * 2);
-                mainCtx.fill();
+                ctx.fillStyle = '#808080';
+                ctx.beginPath();
+                ctx.ellipse(rockX - rockSize * 0.2, rockY - rockSize * 0.2, rockSize * 0.4, rockSize * 0.3, 0, 0, Math.PI * 2);
+                ctx.fill();
             }
             
-            // Draw vegetation
+            // Trees and bushes - positioned further back
+            const foliageColors = COLORS.foliage[currentSeason];
+            
             for (let i = 0; i < 8; i++) {
                 const treeX = ((seed * (i + 1) * 137) % w);
-                const treeY = h * 0.65 + ((seed * i * 73) % 100);
+                const treeY = h * 0.50 + ((seed * i * 73) % 80); // Moved up from 0.65
                 const treeType = (seed * i) % 3;
                 
                 if (treeType === 0) {
-                    // Pine tree with trunk
-                    // Trunk
-                    mainCtx.fillStyle = '#654321';
-                    mainCtx.fillRect(treeX - 3, treeY + 20, 6, 30);
+                    // Pine tree
+                    ctx.fillStyle = '#654321';
+                    ctx.fillRect(treeX - 3, treeY + 20, 6, 30);
                     
-                    // Pine foliage (3 layers)
-                    mainCtx.fillStyle = '#2F4F2F';
-                    mainCtx.beginPath();
-                    mainCtx.moveTo(treeX, treeY);
-                    mainCtx.lineTo(treeX - 15, treeY + 30);
-                    mainCtx.lineTo(treeX + 15, treeY + 30);
-                    mainCtx.closePath();
-                    mainCtx.fill();
+                    ctx.fillStyle = foliageColors.dark;
+                    ctx.beginPath();
+                    ctx.moveTo(treeX, treeY);
+                    ctx.lineTo(treeX - 15, treeY + 30);
+                    ctx.lineTo(treeX + 15, treeY + 30);
+                    ctx.closePath();
+                    ctx.fill();
                     
-                    mainCtx.fillStyle = '#3D5C3D';
-                    mainCtx.beginPath();
-                    mainCtx.moveTo(treeX, treeY + 20);
-                    mainCtx.lineTo(treeX - 12, treeY + 45);
-                    mainCtx.lineTo(treeX + 12, treeY + 45);
-                    mainCtx.closePath();
-                    mainCtx.fill();
+                    ctx.fillStyle = foliageColors.medium;
+                    ctx.beginPath();
+                    ctx.moveTo(treeX, treeY + 20);
+                    ctx.lineTo(treeX - 12, treeY + 45);
+                    ctx.lineTo(treeX + 12, treeY + 45);
+                    ctx.closePath();
+                    ctx.fill();
                 } else if (treeType === 1) {
-                    // Leafy bush with irregular shape
-                    mainCtx.fillStyle = '#1a4d1a';
-                    // Draw multiple overlapping circles for organic shape
+                    // Leafy bush
+                    ctx.fillStyle = foliageColors.dark;
                     for (let j = 0; j < 3; j++) {
                         const offsetX = (j - 1) * 8;
                         const offsetY = Math.sin(j) * 5;
-                        mainCtx.beginPath();
-                        mainCtx.arc(treeX + offsetX, treeY + 20 + offsetY, 12, 0, Math.PI * 2);
-                        mainCtx.fill();
+                        ctx.beginPath();
+                        ctx.arc(treeX + offsetX, treeY + 20 + offsetY, 12, 0, Math.PI * 2);
+                        ctx.fill();
                     }
                     
-                    // Highlights
-                    mainCtx.fillStyle = '#228B22';
-                    mainCtx.beginPath();
-                    mainCtx.arc(treeX - 5, treeY + 15, 8, 0, Math.PI * 2);
-                    mainCtx.fill();
-                    mainCtx.beginPath();
-                    mainCtx.arc(treeX + 5, treeY + 18, 7, 0, Math.PI * 2);
-                    mainCtx.fill();
+                    ctx.fillStyle = foliageColors.light;
+                    ctx.beginPath();
+                    ctx.arc(treeX - 5, treeY + 15, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(treeX + 5, treeY + 18, 7, 0, Math.PI * 2);
+                    ctx.fill();
                 } else {
-                    // Low scrub brush with texture
-                    // Base
-                    mainCtx.fillStyle = '#556B2F';
-                    mainCtx.beginPath();
-                    mainCtx.ellipse(treeX, treeY + 20, 18, 10, 0, 0, Math.PI * 2);
-                    mainCtx.fill();
+                    // Scrub brush
+                    ctx.fillStyle = foliageColors.medium;
+                    ctx.beginPath();
+                    ctx.ellipse(treeX, treeY + 20, 18, 10, 0, 0, Math.PI * 2);
+                    ctx.fill();
                     
-                    // Add some texture with smaller shapes
-                    mainCtx.fillStyle = '#6B8E23';
+                    ctx.fillStyle = foliageColors.light;
                     for (let j = 0; j < 4; j++) {
                         const angle = (j / 4) * Math.PI * 2;
                         const offsetX = Math.cos(angle) * 10;
                         const offsetY = Math.sin(angle) * 6;
-                        mainCtx.beginPath();
-                        mainCtx.arc(treeX + offsetX, treeY + 20 + offsetY, 5, 0, Math.PI * 2);
-                        mainCtx.fill();
+                        ctx.beginPath();
+                        ctx.arc(treeX + offsetX, treeY + 20 + offsetY, 5, 0, Math.PI * 2);
+                        ctx.fill();
                     }
                 }
             }
+        }
+        
+        function drawWindsock(ctx, w, h) {
+            if (!gameState.currentTarget) return;
             
-            // Draw target with perspective
-            if (gameState.currentTarget) {
-                const t = gameState.currentTarget;
-                // Perspective calculation: closer = lower on screen, farther = higher
-                // Map distance to vertical position (300m at 85% down, 1200m at 45% down)
-                const minDist = 300;
-                const maxDist = 1200;
-                const minY = 0.85; // Close targets near bottom
-                const maxY = 0.45; // Far targets higher up
-                
-                const distFactor = (t.distance - minDist) / (maxDist - minDist);
-                const yPos = minY - distFactor * (minY - maxY);
-                
-                // Size scales with distance (perspective)
-                const baseSize = 50;
-                const size = baseSize * (1.5 - distFactor * 0.8);
-                
-                drawTarget(t.x * w, yPos * h, size, t === gameState.currentTarget, t.id);
+            const windsockX = w * GAME_CONSTANTS.WINDSOCK_X_POSITION;
+            const windsockY = h * GAME_CONSTANTS.WINDSOCK_Y_POSITION;
+            
+            // Pole - larger
+            ctx.fillStyle = '#888';
+            ctx.fillRect(windsockX - 3, windsockY, 6, 90);
+            
+            // Ring - larger
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(windsockX, windsockY + 8, 12, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Windsock fabric - larger
+            const t = gameState.currentTarget;
+            const windSpeed = t.wind;
+            const windDir = t.windDir;
+            
+            const fullness = Math.min(windSpeed / 15, 1);
+            const sockLength = 65 * fullness; // Increased from 40
+            const sockWidth = 20 * fullness; // Increased from 12
+            const direction = windDir === 'L->R' ? 1 : -1;
+            
+            ctx.fillStyle = `rgba(255, 100, 0, ${0.7 + fullness * 0.3})`;
+            ctx.beginPath();
+            ctx.moveTo(windsockX, windsockY);
+            ctx.lineTo(windsockX + direction * sockLength, windsockY - sockWidth / 2);
+            ctx.lineTo(windsockX + direction * sockLength, windsockY + sockWidth / 2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Stripes - larger
+            for (let i = 0; i < 3; i++) {
+                const stripeX = windsockX + direction * (sockLength / 3) * i;
+                const stripeWidth = sockWidth * (1 - i / 4);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.fillRect(stripeX, windsockY - stripeWidth / 2, direction * 12, stripeWidth);
             }
         }
-
+        
         function drawTarget(x, y, size, selected, id) {
+            if (gameState.settings.targetType === 'ipsc') {
+                drawIPSCTarget(mainCtx, x, y, size, selected, id);
+            } else if (gameState.settings.targetType === 'car') {
+                drawCarTarget(mainCtx, x, y, size, selected, id);
+            } else {
+                drawBullseyeTarget(mainCtx, x, y, size, selected, id);
+            }
+        }
+        
+        function drawBullseyeTarget(ctx, x, y, size, selected, id) {
             // Shadow
-            mainCtx.fillStyle = 'rgba(0,0,0,0.3)';
-            mainCtx.beginPath();
-            mainCtx.ellipse(x + 5, y + size + 5, size * 0.8, size * 0.2, 0, 0, Math.PI * 2);
-            mainCtx.fill();
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(x + 5, y + size + 5, size * 0.8, size * 0.2, 0, 0, Math.PI * 2);
+            ctx.fill();
             
-            // Target rings
-            mainCtx.fillStyle = '#fff';
-            mainCtx.beginPath();
-            mainCtx.arc(x, y, size, 0, Math.PI * 2);
-            mainCtx.fill();
+            // Rings
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
             
-            mainCtx.fillStyle = '#000';
-            mainCtx.beginPath();
-            mainCtx.arc(x, y, size * 0.75, 0, Math.PI * 2);
-            mainCtx.fill();
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(x, y, size * 0.75, 0, Math.PI * 2);
+            ctx.fill();
             
-            mainCtx.fillStyle = '#fff';
-            mainCtx.beginPath();
-            mainCtx.arc(x, y, size * 0.5, 0, Math.PI * 2);
-            mainCtx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(x, y, size * 0.5, 0, Math.PI * 2);
+            ctx.fill();
             
-            mainCtx.fillStyle = '#000';
-            mainCtx.beginPath();
-            mainCtx.arc(x, y, size * 0.25, 0, Math.PI * 2);
-            mainCtx.fill();
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(x, y, size * 0.25, 0, Math.PI * 2);
+            ctx.fill();
             
-            mainCtx.fillStyle = '#f00';
-            mainCtx.beginPath();
-            mainCtx.arc(x, y, size * 0.1, 0, Math.PI * 2);
-            mainCtx.fill();
+            ctx.fillStyle = '#f00';
+            ctx.beginPath();
+            ctx.arc(x, y, size * 0.1, 0, Math.PI * 2);
+            ctx.fill();
             
             // Selection glow
             if (selected) {
-                mainCtx.strokeStyle = '#0f0';
-                mainCtx.lineWidth = 4;
-                mainCtx.shadowBlur = 20;
-                mainCtx.shadowColor = '#0f0';
-                mainCtx.beginPath();
-                mainCtx.arc(x, y, size + 10, 0, Math.PI * 2);
-                mainCtx.stroke();
-                mainCtx.shadowBlur = 0;
+                ctx.strokeStyle = '#0f0';
+                ctx.lineWidth = 4;
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#0f0';
+                ctx.beginPath();
+                ctx.arc(x, y, size + 10, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
             }
             
             // Label
-            mainCtx.fillStyle = selected ? '#0f0' : '#fff';
-            mainCtx.font = 'bold 16px Courier New';
-            mainCtx.textAlign = 'center';
-            mainCtx.fillText(`Target ${id}`, x, y - size - 10);
+            ctx.fillStyle = selected ? '#0f0' : '#fff';
+            ctx.font = 'bold 16px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Target ${id}`, x, y - size - 10);
         }
-
-        // Draw scope view with mil-dot reticle
-        // Draw scope view with mil-dot reticle
+        
+        function drawIPSCTarget(ctx, x, y, size, selected, id) {
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(x + 5, y + size + 5, size * 0.6, size * 0.15, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // IPSC silhouette - Steel/metal color
+            ctx.fillStyle = '#A0A0A0'; // Steel grey
+            
+            // Head
+            ctx.beginPath();
+            ctx.arc(x, y - size * 0.6, size * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Neck
+            ctx.fillRect(x - size * 0.1, y - size * 0.45, size * 0.2, size * 0.15);
+            
+            // Torso (pentagon shape)
+            ctx.beginPath();
+            ctx.moveTo(x, y - size * 0.3);
+            ctx.lineTo(x - size * 0.5, y + size * 0.2);
+            ctx.lineTo(x - size * 0.3, y + size * 0.7);
+            ctx.lineTo(x + size * 0.3, y + size * 0.7);
+            ctx.lineTo(x + size * 0.5, y + size * 0.2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // A-zone (chest) - Darker steel
+            ctx.fillStyle = '#707070';
+            ctx.beginPath();
+            ctx.moveTo(x, y - size * 0.15);
+            ctx.lineTo(x - size * 0.25, y + size * 0.1);
+            ctx.lineTo(x - size * 0.2, y + size * 0.4);
+            ctx.lineTo(x + size * 0.2, y + size * 0.4);
+            ctx.lineTo(x + size * 0.25, y + size * 0.1);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Metallic highlight on left side
+            ctx.fillStyle = 'rgba(200, 200, 200, 0.3)';
+            ctx.beginPath();
+            ctx.moveTo(x - size * 0.1, y - size * 0.5);
+            ctx.lineTo(x - size * 0.4, y + size * 0.1);
+            ctx.lineTo(x - size * 0.25, y + size * 0.5);
+            ctx.lineTo(x - size * 0.05, y);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Selection glow
+            if (selected) {
+                ctx.strokeStyle = '#0f0';
+                ctx.lineWidth = 4;
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#0f0';
+                ctx.beginPath();
+                ctx.arc(x, y, size + 10, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+            
+            // Label
+            ctx.fillStyle = selected ? '#0f0' : '#fff';
+            ctx.font = 'bold 16px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Target ${id}`, x, y - size - 10);
+        }
+        
+        function drawCarTarget(ctx, x, y, size, selected, id) {
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(x + 8, y + size * 0.8, size * 1.2, size * 0.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Old Dodge sedan - red color
+            const carWidth = size * 2.2;
+            const carHeight = size * 0.9;
+            
+            // Car body - main rectangle
+            ctx.fillStyle = '#CC0000'; // Bright red
+            ctx.fillRect(x - carWidth/2, y - carHeight/2, carWidth, carHeight);
+            
+            // Roof
+            ctx.fillStyle = '#AA0000'; // Darker red
+            ctx.beginPath();
+            ctx.moveTo(x - carWidth * 0.3, y - carHeight/2);
+            ctx.lineTo(x - carWidth * 0.2, y - carHeight * 0.9);
+            ctx.lineTo(x + carWidth * 0.2, y - carHeight * 0.9);
+            ctx.lineTo(x + carWidth * 0.3, y - carHeight/2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Windows (black)
+            ctx.fillStyle = '#222';
+            // Windshield
+            ctx.beginPath();
+            ctx.moveTo(x - carWidth * 0.28, y - carHeight/2 + 4);
+            ctx.lineTo(x - carWidth * 0.19, y - carHeight * 0.85);
+            ctx.lineTo(x + carWidth * 0.19, y - carHeight * 0.85);
+            ctx.lineTo(x + carWidth * 0.28, y - carHeight/2 + 4);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Side windows
+            ctx.fillRect(x - carWidth * 0.15, y - carHeight * 0.7, carWidth * 0.15, carHeight * 0.3);
+            ctx.fillRect(x, y - carHeight * 0.7, carWidth * 0.15, carHeight * 0.3);
+            
+            // Wheels (black)
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(x - carWidth * 0.35, y + carHeight * 0.4, size * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x + carWidth * 0.35, y + carHeight * 0.4, size * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Wheel hubs (grey)
+            ctx.fillStyle = '#888';
+            ctx.beginPath();
+            ctx.arc(x - carWidth * 0.35, y + carHeight * 0.4, size * 0.12, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x + carWidth * 0.35, y + carHeight * 0.4, size * 0.12, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Headlights
+            ctx.fillStyle = '#FFEB3B';
+            ctx.fillRect(x + carWidth * 0.48, y - carHeight * 0.15, carWidth * 0.04, carHeight * 0.2);
+            
+            // Grille
+            ctx.fillStyle = '#555';
+            ctx.fillRect(x + carWidth * 0.48, y + carHeight * 0.1, carWidth * 0.04, carHeight * 0.3);
+            
+            // Chrome bumper
+            ctx.fillStyle = '#C0C0C0';
+            ctx.fillRect(x + carWidth * 0.49, y + carHeight * 0.35, carWidth * 0.04, carHeight * 0.15);
+            
+            // Highlight on hood
+            ctx.fillStyle = 'rgba(255, 100, 100, 0.4)';
+            ctx.fillRect(x, y - carHeight * 0.3, carWidth * 0.3, carHeight * 0.15);
+            
+            // Selection glow
+            if (selected) {
+                ctx.strokeStyle = '#0f0';
+                ctx.lineWidth = 4;
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#0f0';
+                ctx.beginPath();
+                ctx.ellipse(x, y, carWidth/2 + 10, carHeight/2 + 10, 0, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+            
+            // Label - "An Old Dodge"
+            ctx.fillStyle = selected ? '#0f0' : '#fff';
+            ctx.font = 'bold 16px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText('An Old Dodge', x, y - size - 15);
+        }
+        
+        // ============================================================================
+        // DRAWING FUNCTIONS - SCOPE VIEW
+        // ============================================================================
+        
         function drawScope() {
             const w = scopeCanvas.width;
             const h = scopeCanvas.height;
@@ -995,22 +2225,21 @@
                 return;
             }
             
-            // Get user inputs for reticle adjustment
+            // Get user inputs
             const userDope = parseFloat(document.getElementById('dopeInput').value) || 0;
             const userDriftRaw = parseFloat(document.getElementById('driftInput').value) || 0;
             const driftDir = document.querySelector('input[name="driftDir"]:checked').value;
-            const userDrift = driftDir === 'L' ? userDriftRaw : -userDriftRaw; // Left is positive, Right is negative
+            const userDrift = driftDir === 'L' ? userDriftRaw : -userDriftRaw;
             
             const centerX = w / 2;
             const centerY = h / 2;
-            const milSpacing = 30; // pixels per mil
+            const milSpacing = GAME_CONSTANTS.SCOPE_MIL_SPACING;
             
             // Calculate target offset
             const targetOffsetX = userDrift * milSpacing;
             const targetOffsetY = userDope * milSpacing;
             
             // Smooth animation
-            const animSpeed = 0.2; // Adjust for faster/slower animation (0.1 = slower, 0.3 = faster)
             if (Math.abs(gameState.scopeAnimation.targetOffsetX - targetOffsetX) > 0.5 ||
                 Math.abs(gameState.scopeAnimation.targetOffsetY - targetOffsetY) > 0.5) {
                 gameState.scopeAnimation.targetOffsetX = targetOffsetX;
@@ -1019,18 +2248,15 @@
             }
             
             if (gameState.scopeAnimation.animating) {
-                // Interpolate current position toward target
-                gameState.scopeAnimation.currentOffsetX += (gameState.scopeAnimation.targetOffsetX - gameState.scopeAnimation.currentOffsetX) * animSpeed;
-                gameState.scopeAnimation.currentOffsetY += (gameState.scopeAnimation.targetOffsetY - gameState.scopeAnimation.currentOffsetY) * animSpeed;
+                gameState.scopeAnimation.currentOffsetX += (gameState.scopeAnimation.targetOffsetX - gameState.scopeAnimation.currentOffsetX) * GAME_CONSTANTS.SCOPE_PAN_SPEED;
+                gameState.scopeAnimation.currentOffsetY += (gameState.scopeAnimation.targetOffsetY - gameState.scopeAnimation.currentOffsetY) * GAME_CONSTANTS.SCOPE_PAN_SPEED;
                 
-                // Stop animating when close enough
                 if (Math.abs(gameState.scopeAnimation.targetOffsetX - gameState.scopeAnimation.currentOffsetX) < 0.1 &&
                     Math.abs(gameState.scopeAnimation.targetOffsetY - gameState.scopeAnimation.currentOffsetY) < 0.1) {
                     gameState.scopeAnimation.currentOffsetX = gameState.scopeAnimation.targetOffsetX;
                     gameState.scopeAnimation.currentOffsetY = gameState.scopeAnimation.targetOffsetY;
                     gameState.scopeAnimation.animating = false;
                 } else {
-                    // Continue animation
                     requestAnimationFrame(drawScope);
                 }
             }
@@ -1038,119 +2264,37 @@
             const reticleOffsetX = gameState.scopeAnimation.currentOffsetX;
             const reticleOffsetY = gameState.scopeAnimation.currentOffsetY;
             
-            // Draw simplified landscape background in scope
-            // Sky
-            const skyGrad = scopeCtx.createLinearGradient(0, 0, 0, h * 0.4);
-            skyGrad.addColorStop(0, '#87CEEB');
-            skyGrad.addColorStop(1, '#B0E0E6');
-            scopeCtx.fillStyle = skyGrad;
-            scopeCtx.fillRect(0, 0, w, h * 0.4);
+            // Draw background landscape
+            drawScopeBackground(scopeCtx, w, h);
             
-            // Hills based on target distance (farther = more hills visible)
-            const t = gameState.currentTarget;
-            const distFactor = (t.distance - 300) / (1200 - 300);
-            
-            // Far hills
-            scopeCtx.fillStyle = '#6B8E23';
-            scopeCtx.beginPath();
-            scopeCtx.moveTo(0, h * 0.35);
-            for (let x = 0; x < w; x += 40) {
-                scopeCtx.lineTo(x, h * 0.35 + Math.sin(x * 0.02 + distFactor * 5) * 15);
-            }
-            scopeCtx.lineTo(w, h);
-            scopeCtx.lineTo(0, h);
-            scopeCtx.closePath();
-            scopeCtx.fill();
-            
-            // Near ground
-            scopeCtx.fillStyle = '#556B2F';
-            scopeCtx.beginPath();
-            scopeCtx.moveTo(0, h * 0.55);
-            for (let x = 0; x < w; x += 30) {
-                scopeCtx.lineTo(x, h * 0.55 + Math.sin(x * 0.03 + distFactor * 3) * 20);
-            }
-            scopeCtx.lineTo(w, h);
-            scopeCtx.lineTo(0, h);
-            scopeCtx.closePath();
-            scopeCtx.fill();
-            
-            // Foreground
-            const groundGrad = scopeCtx.createLinearGradient(0, h * 0.7, 0, h);
-            groundGrad.addColorStop(0, '#8B7355');
-            groundGrad.addColorStop(1, '#654321');
-            scopeCtx.fillStyle = groundGrad;
-            scopeCtx.fillRect(0, h * 0.7, w, h * 0.3);
-            
-            // Dark vignette circle
-            const radius = Math.min(w, h) * 0.45;
+            // Vignette
+            const radius = Math.min(w, h) * GAME_CONSTANTS.SCOPE_RADIUS_FACTOR;
             const vignetteGrad = scopeCtx.createRadialGradient(centerX, centerY, radius * 0.9, centerX, centerY, radius * 1.1);
             vignetteGrad.addColorStop(0, 'rgba(0,0,0,0)');
             vignetteGrad.addColorStop(1, 'rgba(0,0,0,0.8)');
             scopeCtx.fillStyle = vignetteGrad;
             scopeCtx.fillRect(0, 0, w, h);
             
-            // Target (moves opposite to adjustments) - DRAW FIRST so reticle is on top
-            // If you dial LEFT (positive userDrift), target moves RIGHT (positive X)
-            // If you dial UP (positive userDope), target moves DOWN (positive Y, since Y increases downward)
-            const targetSize = 60;
-            const targetDisplayX = centerX + reticleOffsetX;  // LEFT makes target go RIGHT
-            const targetDisplayY = centerY + reticleOffsetY;  // UP makes target go DOWN (positive Y = down)
+            // Target (draw first)
+            const t = gameState.currentTarget;
+            const distFactor = (t.distance - GAME_CONSTANTS.MIN_DISTANCE) / (GAME_CONSTANTS.MAX_DISTANCE - GAME_CONSTANTS.MIN_DISTANCE);
+            const targetSize = GAME_CONSTANTS.SCOPE_TARGET_BASE_SIZE * (1.2 - distFactor * 0.6);
+            const targetDisplayX = centerX + reticleOffsetX;
+            const targetDisplayY = centerY + reticleOffsetY;
             drawTargetInScope(targetDisplayX, targetDisplayY, targetSize);
             
-            // Mil-dot reticle (stays centered) - DRAW ON TOP of target
-            scopeCtx.strokeStyle = '#0f0';
-            scopeCtx.fillStyle = '#0f0';
-            scopeCtx.lineWidth = 1;
+            // Reticle (draw on top)
+            drawReticle(scopeCtx, centerX, centerY, radius);
             
-            const reticleX = centerX;
-            const reticleY = centerY;
-            
-            // Horizontal line
-            scopeCtx.beginPath();
-            scopeCtx.moveTo(reticleX - radius, reticleY);
-            scopeCtx.lineTo(reticleX + radius, reticleY);
-            scopeCtx.stroke();
-            
-            // Vertical line
-            scopeCtx.beginPath();
-            scopeCtx.moveTo(reticleX, reticleY - radius);
-            scopeCtx.lineTo(reticleX, reticleY + radius);
-            scopeCtx.stroke();
-            
-            // Mil dots - each dot is 1 mil - DRAW ON TOP of target
-            for (let i = -15; i <= 15; i++) {
-                if (i === 0) continue;
-                
-                // Horizontal dots (every 1 mil)
-                scopeCtx.beginPath();
-                scopeCtx.arc(reticleX + i * milSpacing, reticleY, 2, 0, Math.PI * 2);
-                scopeCtx.fill();
-                
-                // Vertical dots (every 1 mil)
-                scopeCtx.beginPath();
-                scopeCtx.arc(reticleX, reticleY + i * milSpacing, 2, 0, Math.PI * 2);
-                scopeCtx.fill();
-            }
-            
-            // Center crosshair (red) - DRAW ON TOP
-            scopeCtx.strokeStyle = '#f00';
-            scopeCtx.lineWidth = 2;
-            scopeCtx.beginPath();
-            scopeCtx.moveTo(reticleX - 10, reticleY);
-            scopeCtx.lineTo(reticleX + 10, reticleY);
-            scopeCtx.moveTo(reticleX, reticleY - 10);
-            scopeCtx.lineTo(reticleX, reticleY + 10);
-            scopeCtx.stroke();
-            
-            // Range info - draw with dark background for visibility
+            // Range info
             scopeCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
             scopeCtx.fillRect(5, 5, 80, 25);
-            scopeCtx.fillStyle = '#0f0';
+            scopeCtx.fillStyle = gameState.settings.reticleColor;
             scopeCtx.font = '14px Courier New';
             scopeCtx.textAlign = 'left';
             scopeCtx.fillText(`${t.distance}m`, 10, 20);
             
-            // Adjustment display with dark background
+            // Adjustment display
             if (userDope !== 0 || Math.abs(userDrift) !== 0) {
                 scopeCtx.font = '12px Courier New';
                 scopeCtx.textAlign = 'right';
@@ -1162,71 +2306,360 @@
                     const textWidth = scopeCtx.measureText(displayText).width;
                     scopeCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
                     scopeCtx.fillRect(w - textWidth - 15, 5, textWidth + 10, 25);
-                    scopeCtx.fillStyle = '#0f0';
+                    scopeCtx.fillStyle = gameState.settings.reticleColor;
                     scopeCtx.fillText(displayText, w - 10, 20);
                 }
             }
         }
-
-        function drawTargetInScope(cx, cy, size) {
-            // Mini target
-            scopeCtx.fillStyle = '#fff';
-            scopeCtx.beginPath();
-            scopeCtx.arc(cx, cy, size, 0, Math.PI * 2);
-            scopeCtx.fill();
+        
+        function drawScopeBackground(ctx, w, h) {
+            const t = gameState.currentTarget;
+            const distFactor = (t.distance - GAME_CONSTANTS.MIN_DISTANCE) / (GAME_CONSTANTS.MAX_DISTANCE - GAME_CONSTANTS.MIN_DISTANCE);
             
-            scopeCtx.fillStyle = '#000';
-            scopeCtx.beginPath();
-            scopeCtx.arc(cx, cy, size * 0.75, 0, Math.PI * 2);
-            scopeCtx.fill();
+            // Sky
+            const skyColors = COLORS.sky[currentTimeOfDay];
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.4);
+            skyGrad.addColorStop(0, skyColors.top);
+            skyGrad.addColorStop(1, skyColors.bottom);
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, w, h * 0.4);
             
-            scopeCtx.fillStyle = '#fff';
-            scopeCtx.beginPath();
-            scopeCtx.arc(cx, cy, size * 0.5, 0, Math.PI * 2);
-            scopeCtx.fill();
+            // Hills
+            const foliageColors = COLORS.foliage[currentSeason];
             
-            scopeCtx.fillStyle = '#000';
-            scopeCtx.beginPath();
-            scopeCtx.arc(cx, cy, size * 0.25, 0, Math.PI * 2);
-            scopeCtx.fill();
+            ctx.fillStyle = foliageColors.dark;
+            ctx.beginPath();
+            ctx.moveTo(0, h * 0.35);
+            for (let x = 0; x < w; x += 40) {
+                ctx.lineTo(x, h * 0.35 + Math.sin(x * 0.02 + distFactor * 5) * 15);
+            }
+            ctx.lineTo(w, h);
+            ctx.lineTo(0, h);
+            ctx.closePath();
+            ctx.fill();
             
-            scopeCtx.fillStyle = '#f00';
-            scopeCtx.beginPath();
-            scopeCtx.arc(cx, cy, size * 0.1, 0, Math.PI * 2);
-            scopeCtx.fill();
+            ctx.fillStyle = foliageColors.medium;
+            ctx.beginPath();
+            ctx.moveTo(0, h * 0.55);
+            for (let x = 0; x < w; x += 30) {
+                ctx.lineTo(x, h * 0.55 + Math.sin(x * 0.03 + distFactor * 3) * 20);
+            }
+            ctx.lineTo(w, h);
+            ctx.lineTo(0, h);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Foreground
+            const groundColors = COLORS.ground[currentSeason];
+            const groundGrad = ctx.createLinearGradient(0, h * 0.7, 0, h);
+            groundGrad.addColorStop(0, groundColors.top);
+            groundGrad.addColorStop(1, groundColors.bottom);
+            ctx.fillStyle = groundGrad;
+            ctx.fillRect(0, h * 0.7, w, h * 0.3);
         }
-
-        // Animate bullet trajectory
-        function animateBullet(userDope, userDrift, correctDope, correctDrift) {
+        
+        function drawReticle(ctx, cx, cy, radius) {
+            const reticleType = gameState.settings.reticleType;
+            const reticleColor = gameState.settings.reticleColor;
+            const milSpacing = GAME_CONSTANTS.SCOPE_MIL_SPACING;
+            
+            ctx.strokeStyle = reticleColor;
+            ctx.fillStyle = reticleColor;
+            ctx.lineWidth = 1;
+            
+            switch(reticleType) {
+                case 'mildot':
+                    drawMilDotReticle(ctx, cx, cy, radius, milSpacing);
+                    break;
+                case 'crosshair':
+                    drawCrosshairReticle(ctx, cx, cy, radius);
+                    break;
+                case 'german':
+                    drawGermanReticle(ctx, cx, cy, radius);
+                    break;
+                case 'holdover':
+                    drawHoldoverReticle(ctx, cx, cy, radius, milSpacing);
+                    break;
+            }
+            
+            // Center crosshair (red)
+            ctx.strokeStyle = '#f00';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(cx - 10, cy);
+            ctx.lineTo(cx + 10, cy);
+            ctx.moveTo(cx, cy - 10);
+            ctx.lineTo(cx, cy + 10);
+            ctx.stroke();
+        }
+        
+        function drawMilDotReticle(ctx, cx, cy, radius, milSpacing) {
+            // Horizontal line
+            ctx.beginPath();
+            ctx.moveTo(cx - radius, cy);
+            ctx.lineTo(cx + radius, cy);
+            ctx.stroke();
+            
+            // Vertical line
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - radius);
+            ctx.lineTo(cx, cy + radius);
+            ctx.stroke();
+            
+            // Mil dots
+            for (let i = -15; i <= 15; i++) {
+                if (i === 0) continue;
+                
+                ctx.beginPath();
+                ctx.arc(cx + i * milSpacing, cy, 2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(cx, cy + i * milSpacing, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawCrosshairReticle(ctx, cx, cy, radius) {
+            ctx.lineWidth = 2;
+            
+            // Horizontal
+            ctx.beginPath();
+            ctx.moveTo(cx - radius, cy);
+            ctx.lineTo(cx - 20, cy);
+            ctx.moveTo(cx + 20, cy);
+            ctx.lineTo(cx + radius, cy);
+            ctx.stroke();
+            
+            // Vertical
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - radius);
+            ctx.lineTo(cx, cy - 20);
+            ctx.moveTo(cx, cy + 20);
+            ctx.lineTo(cx, cy + radius);
+            ctx.stroke();
+        }
+        
+        function drawGermanReticle(ctx, cx, cy, radius) {
+            ctx.lineWidth = 2;
+            
+            // Thick posts from edges
+            // Top
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - radius);
+            ctx.lineTo(cx, cy - 60);
+            ctx.stroke();
+            
+            // Bottom
+            ctx.beginPath();
+            ctx.moveTo(cx, cy + radius);
+            ctx.lineTo(cx, cy + 60);
+            ctx.stroke();
+            
+            // Left
+            ctx.beginPath();
+            ctx.moveTo(cx - radius, cy);
+            ctx.lineTo(cx - 60, cy);
+            ctx.stroke();
+            
+            // Right
+            ctx.beginPath();
+            ctx.moveTo(cx + radius, cy);
+            ctx.lineTo(cx + 60, cy);
+            ctx.stroke();
+        }
+        
+        function drawHoldoverReticle(ctx, cx, cy, radius, milSpacing) {
+            // Main crosshair
+            ctx.beginPath();
+            ctx.moveTo(cx - radius, cy);
+            ctx.lineTo(cx + radius, cy);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - radius);
+            ctx.lineTo(cx, cy + radius);
+            ctx.stroke();
+            
+            // BDC dots down the center
+            for (let i = 1; i <= 10; i++) {
+                const yOffset = i * milSpacing;
+                ctx.beginPath();
+                ctx.arc(cx, cy + yOffset, 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Windage marks
+                ctx.beginPath();
+                ctx.moveTo(cx - 10, cy + yOffset);
+                ctx.lineTo(cx + 10, cy + yOffset);
+                ctx.stroke();
+            }
+        }
+        
+        function drawTargetInScope(cx, cy, size) {
+            if (gameState.settings.targetType === 'ipsc') {
+                drawIPSCTargetInScope(scopeCtx, cx, cy, size);
+            } else if (gameState.settings.targetType === 'car') {
+                drawCarTargetInScope(scopeCtx, cx, cy, size);
+            } else {
+                drawBullseyeTargetInScope(scopeCtx, cx, cy, size);
+            }
+        }
+        
+        function drawBullseyeTargetInScope(ctx, cx, cy, size) {
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(cx, cy, size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(cx, cy, size * 0.75, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(cx, cy, size * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(cx, cy, size * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#f00';
+            ctx.beginPath();
+            ctx.arc(cx, cy, size * 0.1, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function drawIPSCTargetInScope(ctx, cx, cy, size) {
+            // Steel/metal color
+            ctx.fillStyle = '#A0A0A0';
+            
+            // Head
+            ctx.beginPath();
+            ctx.arc(cx, cy - size * 0.6, size * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Neck
+            ctx.fillRect(cx - size * 0.1, cy - size * 0.45, size * 0.2, size * 0.15);
+            
+            // Torso
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - size * 0.3);
+            ctx.lineTo(cx - size * 0.5, cy + size * 0.2);
+            ctx.lineTo(cx - size * 0.3, cy + size * 0.7);
+            ctx.lineTo(cx + size * 0.3, cy + size * 0.7);
+            ctx.lineTo(cx + size * 0.5, cy + size * 0.2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // A-zone - Darker steel
+            ctx.fillStyle = '#707070';
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - size * 0.15);
+            ctx.lineTo(cx - size * 0.25, cy + size * 0.1);
+            ctx.lineTo(cx - size * 0.2, cy + size * 0.4);
+            ctx.lineTo(cx + size * 0.2, cy + size * 0.4);
+            ctx.lineTo(cx + size * 0.25, cy + size * 0.1);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Metallic highlight
+            ctx.fillStyle = 'rgba(200, 200, 200, 0.3)';
+            ctx.beginPath();
+            ctx.moveTo(cx - size * 0.1, cy - size * 0.5);
+            ctx.lineTo(cx - size * 0.4, cy + size * 0.1);
+            ctx.lineTo(cx - size * 0.25, cy + size * 0.5);
+            ctx.lineTo(cx - size * 0.05, cy);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        function drawCarTargetInScope(ctx, cx, cy, size) {
+            // Red Dodge in scope view
+            const carWidth = size * 2.2;
+            const carHeight = size * 0.9;
+            
+            // Car body
+            ctx.fillStyle = '#CC0000';
+            ctx.fillRect(cx - carWidth/2, cy - carHeight/2, carWidth, carHeight);
+            
+            // Roof
+            ctx.fillStyle = '#AA0000';
+            ctx.beginPath();
+            ctx.moveTo(cx - carWidth * 0.3, cy - carHeight/2);
+            ctx.lineTo(cx - carWidth * 0.2, cy - carHeight * 0.9);
+            ctx.lineTo(cx + carWidth * 0.2, cy - carHeight * 0.9);
+            ctx.lineTo(cx + carWidth * 0.3, cy - carHeight/2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Windows
+            ctx.fillStyle = '#222';
+            ctx.beginPath();
+            ctx.moveTo(cx - carWidth * 0.28, cy - carHeight/2 + 3);
+            ctx.lineTo(cx - carWidth * 0.19, cy - carHeight * 0.85);
+            ctx.lineTo(cx + carWidth * 0.19, cy - carHeight * 0.85);
+            ctx.lineTo(cx + carWidth * 0.28, cy - carHeight/2 + 3);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Wheels
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(cx - carWidth * 0.35, cy + carHeight * 0.4, size * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(cx + carWidth * 0.35, cy + carHeight * 0.4, size * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Wheel hubs
+            ctx.fillStyle = '#888';
+            ctx.beginPath();
+            ctx.arc(cx - carWidth * 0.35, cy + carHeight * 0.4, size * 0.12, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(cx + carWidth * 0.35, cy + carHeight * 0.4, size * 0.12, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Headlight
+            ctx.fillStyle = '#FFEB3B';
+            ctx.fillRect(cx + carWidth * 0.48, cy - carHeight * 0.15, carWidth * 0.04, carHeight * 0.2);
+            
+            // Grille
+            ctx.fillStyle = '#555';
+            ctx.fillRect(cx + carWidth * 0.48, cy + carHeight * 0.1, carWidth * 0.04, carHeight * 0.3);
+        }
+        
+        // ============================================================================
+        // BULLET ANIMATION
+        // ============================================================================
+        
+        function animateBullet(userDope, userDrift) {
             return new Promise(resolve => {
                 const w = scopeCanvas.width;
                 const h = scopeCanvas.height;
                 const cx = w / 2;
                 const cy = h / 2;
                 
-                const milSpacing = 30;
+                const milSpacing = GAME_CONSTANTS.SCOPE_MIL_SPACING;
                 
-                // Bullet starts from reticle center
                 const startX = cx;
                 const startY = cy;
                 
-                // Calculate where target currently appears in scope with user's adjustments
                 const userOffsetX = userDrift * milSpacing;
                 const userOffsetY = userDope * milSpacing;
-                const targetDisplayX = cx + userOffsetX;  // Where target is in scope
-                const targetDisplayY = cy + userOffsetY;
-                
-                // Bullet hits the center of where the target appears
-                // (This is where the reticle is aimed)
-                const impactX = targetDisplayX;
-                const impactY = targetDisplayY;
+                const impactX = cx + userOffsetX;
+                const impactY = cy + userOffsetY;
                 
                 let progress = 0;
-                const duration = 60; // frames
+                const duration = GAME_CONSTANTS.ANIMATION_DURATION;
                 
                 function animate() {
                     if (progress >= duration) {
-                        // Show impact
+                        // Impact
                         scopeCtx.fillStyle = '#ff0';
                         scopeCtx.shadowBlur = 20;
                         scopeCtx.shadowColor = '#ff0';
@@ -1235,13 +2668,11 @@
                         scopeCtx.fill();
                         scopeCtx.shadowBlur = 0;
                         
-                        // Impact flash
                         setTimeout(() => {
                             scopeCtx.fillStyle = 'rgba(255, 255, 255, 0.5)';
                             scopeCtx.fillRect(0, 0, w, h);
                             setTimeout(() => {
                                 drawScope();
-                                // Keep impact marker
                                 scopeCtx.fillStyle = '#f00';
                                 scopeCtx.beginPath();
                                 scopeCtx.arc(impactX, impactY, 5, 0, Math.PI * 2);
@@ -1254,7 +2685,6 @@
                     
                     drawScope();
                     
-                    // Bullet trail from reticle center to impact
                     const t = progress / duration;
                     const x = startX + (impactX - startX) * t;
                     const y = startY + (impactY - startY) * t;
@@ -1281,83 +2711,82 @@
                 animate();
             });
         }
-
-        // UI Functions
-        function selectTarget(target) {
-            gameState.currentTarget = target;
-            gameState.shotFired = false;
+        
+        // ============================================================================
+        // HIT DETECTION WITH DISTANCE SCALING
+        // ============================================================================
+        
+        function getPerfectHitThreshold(distance) {
+            // Perfect hit threshold scales with distance
+            // 300m: 0.3 mils, 1200m: 0.1 mils
+            const minDist = GAME_CONSTANTS.MIN_DISTANCE;  // 300
+            const maxDist = GAME_CONSTANTS.MAX_DISTANCE;  // 1200
+            const minThreshold = 0.1;  // Stricter at long range
+            const maxThreshold = 0.3;  // More forgiving at close range
             
-            // Reset scope animation
-            gameState.scopeAnimation = {
-                currentOffsetX: 0,
-                currentOffsetY: 0,
-                targetOffsetX: 0,
-                targetOffsetY: 0,
-                animating: false
-            };
-            
-            document.getElementById('targetHeader').textContent = `Target ${target.id}`;
-            document.getElementById('targetSection').style.display = 'block';
-            document.getElementById('caliberSection').style.display = 'block';
-            document.getElementById('inputSection').style.display = 'block';
-            document.getElementById('resultsPanel').style.display = 'none';
-            
-            document.getElementById('distanceDisplay').textContent = target.distance;
-            document.getElementById('windDisplay').textContent = `${target.wind} (R → L)`;
-            document.getElementById('tempDisplay').textContent = target.temp;
-            document.getElementById('humidityDisplay').textContent = target.humidity;
-            document.getElementById('altitudeDisplay').textContent = target.altitude;
-            document.getElementById('angleDisplay').textContent = target.angle > 0 ? `+${target.angle}` : target.angle;
-            
-            document.getElementById('dopeInput').value = '';
-            document.getElementById('driftInput').value = '';
-            document.querySelector('input[name="driftDir"][value="L"]').checked = true;
-            document.getElementById('sendButton').disabled = false;
-            
-            // Add input listeners for real-time scope updates
-            document.getElementById('dopeInput').oninput = drawScope;
-            document.getElementById('driftInput').oninput = drawScope;
-            document.querySelectorAll('input[name="driftDir"]').forEach(radio => {
-                radio.onchange = drawScope;
-            });
-            
-            drawMainView();
-            drawScope();
+            const distFactor = (distance - minDist) / (maxDist - minDist);
+            return maxThreshold - (distFactor * (maxThreshold - minThreshold));
         }
-
+        
+        function getHitThreshold(distance) {
+            // Hit threshold scales with distance
+            // 300m: 1.0 mils, 1200m: 0.3 mils
+            const minDist = GAME_CONSTANTS.MIN_DISTANCE;  // 300
+            const maxDist = GAME_CONSTANTS.MAX_DISTANCE;  // 1200
+            const minThreshold = 0.3;  // Stricter at long range
+            const maxThreshold = 1.0;  // More forgiving at close range
+            
+            const distFactor = (distance - minDist) / (maxDist - minDist);
+            return maxThreshold - (distFactor * (maxThreshold - minThreshold));
+        }
+        
+        // ============================================================================
+        // SHOOTING MECHANICS
+        // ============================================================================
+        
         async function sendShot() {
             if (gameState.shotFired || gameState.animating) return;
             
             const userDope = parseFloat(document.getElementById('dopeInput').value) || 0;
             const userDriftRaw = parseFloat(document.getElementById('driftInput').value) || 0;
             const driftDir = document.querySelector('input[name="driftDir"]:checked').value;
-            const userDrift = driftDir === 'L' ? userDriftRaw : -userDriftRaw; // Convert to left-positive format
+            const userDrift = driftDir === 'L' ? userDriftRaw : -userDriftRaw;
             const caliber = document.getElementById('caliberSelect').value;
             
             gameState.shotFired = true;
             gameState.animating = true;
             document.getElementById('sendButton').disabled = true;
             
+            playSound('shot');
+            
+            await animateBullet(userDope, userDrift);
+            
             const solution = calculateSolution(gameState.currentTarget, caliber);
-            
-            await animateBullet(userDope, userDrift, solution.dope, solution.drift);
-            
             const dopeError = Math.abs(userDope - solution.dope);
             const driftError = Math.abs(userDrift - solution.drift);
             const totalError = Math.sqrt(dopeError * dopeError + driftError * driftError);
             
             gameState.totalError += totalError;
-            gameState.animating = false;
+            
+            // Distance-based hit detection
+            const hitThreshold = getHitThreshold(gameState.currentTarget.distance);
+            const hit = totalError < hitThreshold;
+            playSound(hit ? 'hit' : 'miss');
             
             showResults(userDope, userDrift, solution, dopeError, driftError, totalError, caliber, driftDir, userDriftRaw);
+            
+            gameState.animating = false;
         }
-
+        
         function showResults(userDope, userDrift, solution, dopeError, driftError, totalError, caliber, driftDir, userDriftRaw) {
-            const perfect = totalError < 0.3;
-            const hit = totalError < 1.0;  // Within 1 mil = hit (30 pixels, target is 60px radius)
+            // Distance-based thresholds
+            const perfectThreshold = getPerfectHitThreshold(gameState.currentTarget.distance);
+            const hitThreshold = getHitThreshold(gameState.currentTarget.distance);
+            
+            const perfect = totalError < perfectThreshold;
+            const hit = totalError < hitThreshold;
             if (perfect) gameState.perfectHits++;
             
-            // Save to history
             gameState.shotHistory.push({
                 round: gameState.round,
                 distance: gameState.currentTarget.distance,
@@ -1366,7 +2795,6 @@
                 hit: hit
             });
             
-            // Format drift for display (convert to L/R notation)
             const correctDriftDir = solution.drift >= 0 ? 'L' : 'R';
             const correctDriftVal = Math.abs(solution.drift);
             
@@ -1376,15 +2804,12 @@
             document.getElementById('overlayHitIcon').textContent = hitText;
             document.getElementById('overlayHitIcon').style.color = hitColor;
             
-            // Show user's solution
             document.getElementById('overlayUserDope').textContent = userDope.toFixed(2);
             document.getElementById('overlayUserDrift').textContent = `${userDriftRaw.toFixed(2)} mils ${driftDir}`;
             
-            // Show correct solution
             document.getElementById('overlayCorrectDope').textContent = solution.dope.toFixed(2);
             document.getElementById('overlayCorrectDrift').textContent = `${correctDriftVal.toFixed(2)} mils ${correctDriftDir}`;
             
-            // Dope error display
             let dopeErrorText, dopeErrorColor;
             if (dopeError < 0.01) {
                 dopeErrorText = 'Perfect!';
@@ -1397,7 +2822,6 @@
                 dopeErrorColor = '#f00';
             }
             
-            // Drift error display
             let driftErrorText, driftErrorColor;
             if (driftDir === correctDriftDir) {
                 const diff = userDriftRaw - correctDriftVal;
@@ -1415,7 +2839,7 @@
                 driftErrorText = `Wrong direction! Should be ${correctDriftDir}, you called ${driftDir}`;
                 driftErrorColor = '#f00';
             }
-                
+            
             document.getElementById('overlayDopeError').textContent = dopeErrorText;
             document.getElementById('overlayDopeError').style.color = dopeErrorColor;
             document.getElementById('overlayDriftError').textContent = driftErrorText;
@@ -1427,21 +2851,18 @@ Angle ${gameState.currentTarget.angle}° → Effective range: ${Math.round(solut
 (${gameState.currentTarget.distance}m × cos(${gameState.currentTarget.angle}°) = ${Math.round(solution.effectiveRange)}m)<br><br>
 From ballistic table at ${Math.round(solution.effectiveRange)}m:<br>
 Elevation: ${solution.dope.toFixed(2)} mils UP<br><br>
-Wind ${gameState.currentTarget.wind}mph (R → L) pushes bullet LEFT<br>
+Wind ${gameState.currentTarget.wind}mph (${gameState.currentTarget.windDir}) pushes bullet ${gameState.currentTarget.windDir === 'R->L' ? 'LEFT' : 'RIGHT'}<br>
 To compensate, aim ${correctDriftDir}: ${(gameState.currentTarget.wind / 10).toFixed(2)} × table drift<br>
 Final correction: ${correctDriftVal.toFixed(2)} mils ${correctDriftDir}<br><br>
 <strong>Total error: ${totalError.toFixed(3)} mils</strong><br>
-${perfect ? '✓ Perfect shot (<0.3 mil)!' : hit ? '✓ Hit target (<1.0 mil)' : '✗ Miss (>1.0 mil)'}
+${perfect ? `✓ Perfect shot (<${perfectThreshold.toFixed(2)} mil at ${gameState.currentTarget.distance}m)!` : hit ? `✓ Hit target (<${hitThreshold.toFixed(2)} mil at ${gameState.currentTarget.distance}m)` : `✗ Miss (>${hitThreshold.toFixed(2)} mil at ${gameState.currentTarget.distance}m)`}
             `;
             
             document.getElementById('overlayExplanation').innerHTML = explanation;
-            
             document.getElementById('scoreDisplay').textContent = gameState.totalError.toFixed(2);
             
-            // Show overlay
             document.getElementById('resultsOverlay').style.display = 'block';
             
-            // Setup results panel buttons (hidden until overlay closed)
             if (gameState.round >= 10) {
                 document.getElementById('overlayNextButton').style.display = 'none';
                 document.getElementById('overlayResetButton').style.display = 'block';
@@ -1454,7 +2875,61 @@ ${perfect ? '✓ Perfect shot (<0.3 mil)!' : hit ? '✓ Hit target (<1.0 mil)' :
                 document.getElementById('resetButton').style.display = 'none';
             }
         }
-
+        
+        function closeResultsOverlay() {
+            document.getElementById('resultsOverlay').style.display = 'none';
+            document.getElementById('resultsPanel').style.display = 'block';
+            playSound('click');
+        }
+        
+        // ============================================================================
+        // GAME FLOW
+        // ============================================================================
+        
+        function selectTarget(target) {
+            gameState.currentTarget = target;
+            gameState.shotFired = false;
+            
+            // Update random time/season for this target
+            updateEnvironmentRandomness();
+            
+            gameState.scopeAnimation = {
+                currentOffsetX: 0,
+                currentOffsetY: 0,
+                targetOffsetX: 0,
+                targetOffsetY: 0,
+                animating: false
+            };
+            
+            document.getElementById('targetHeader').textContent = `Target ${target.id}`;
+            document.getElementById('targetSection').style.display = 'block';
+            document.getElementById('caliberSection').style.display = 'block';
+            document.getElementById('inputSection').style.display = 'block';
+            document.getElementById('resultsPanel').style.display = 'none';
+            
+            document.getElementById('distanceDisplay').textContent = target.distance;
+            document.getElementById('windDisplay').textContent = `${target.wind} mph (${target.windDir})`;
+            document.getElementById('tempDisplay').textContent = target.temp;
+            document.getElementById('humidityDisplay').textContent = target.humidity;
+            document.getElementById('altitudeDisplay').textContent = target.altitude;
+            document.getElementById('angleDisplay').textContent = target.angle > 0 ? `+${target.angle}` : target.angle;
+            
+            document.getElementById('dopeInput').value = '';
+            document.getElementById('driftInput').value = '';
+            document.querySelector('input[name="driftDir"][value="L"]').checked = true;
+            document.getElementById('sendButton').disabled = false;
+            
+            document.getElementById('dopeInput').oninput = drawScope;
+            document.getElementById('driftInput').oninput = drawScope;
+            document.querySelectorAll('input[name="driftDir"]').forEach(radio => {
+                radio.onchange = drawScope;
+            });
+            
+            playSound('whoosh');
+            drawMainView();
+            drawScope();
+        }
+        
         function nextRound() {
             document.getElementById('resultsOverlay').style.display = 'none';
             document.getElementById('resultsPanel').style.display = 'none';
@@ -1464,23 +2939,16 @@ ${perfect ? '✓ Perfect shot (<0.3 mil)!' : hit ? '✓ Hit target (<1.0 mil)' :
             selectTarget(gameState.currentTarget);
         }
         
-        function closeResultsOverlay() {
-            document.getElementById('resultsOverlay').style.display = 'none';
-            // Show the Next Target button in results panel (in calc panel)
-            document.getElementById('resultsPanel').style.display = 'block';
-        }
-
         function resetGame() {
-            // Save high score
             const currentScore = gameState.totalError.toFixed(2);
-            const highScore = localStorage.getItem('spotterHighScore');
+            const highScore = localStorage.getItem(GAME_CONSTANTS.STORAGE_HIGH_SCORE);
             
             if (!highScore || parseFloat(currentScore) < parseFloat(highScore)) {
-                localStorage.setItem('spotterHighScore', currentScore);
+                localStorage.setItem(GAME_CONSTANTS.STORAGE_HIGH_SCORE, currentScore);
                 document.getElementById('highScoreDisplay').textContent = currentScore + ' mils';
-                alert(`NEW BEST SCORE: ${currentScore} mils!`);
+                alert(`NEW BEST SCORE: ${currentScore} mils!\nPerfect Hits: ${gameState.perfectHits}`);
             } else {
-                alert(`Final Score: ${currentScore} mils\nBest: ${highScore} mils`);
+                alert(`Final Score: ${currentScore} mils\nBest: ${highScore} mils\nPerfect Hits: ${gameState.perfectHits}`);
             }
             
             gameState = {
@@ -1498,149 +2966,326 @@ ${perfect ? '✓ Perfect shot (<0.3 mil)!' : hit ? '✓ Hit target (<1.0 mil)' :
                     targetOffsetX: 0,
                     targetOffsetY: 0,
                     animating: false
-                }
+                },
+                settings: { ...gameState.settings },
+                weather: { ...gameState.weather }
             };
             
             document.getElementById('roundDisplay').textContent = '1/10';
             document.getElementById('scoreDisplay').textContent = '0.00';
-            
-            // Hide overlay and results panel
             document.getElementById('resultsOverlay').style.display = 'none';
             document.getElementById('resultsPanel').style.display = 'none';
             
+            playSound('whoosh');
             startGame();
         }
-
+        
+        // ============================================================================
+        // MODALS AND UI
+        // ============================================================================
+        
         function showBallisticTable() {
-            const caliber = document.getElementById('caliberSelect').value;
-            const data = ballisticData[caliber];
+            const modal = document.getElementById('ballisticModal');
             
-            document.getElementById('modalCaliberName').textContent = caliber;
-            
-            // Show environmental data if target is selected
-            if (gameState.currentTarget) {
-                const t = gameState.currentTarget;
-                document.getElementById('modalEnvData').style.display = 'block';
-                document.getElementById('modalDistance').textContent = t.distance;
-                document.getElementById('modalWind').textContent = `${t.wind} (R → L)`;
-                document.getElementById('modalTemp').textContent = t.temp;
-                document.getElementById('modalHumidity').textContent = t.humidity;
-                document.getElementById('modalAltitude').textContent = t.altitude;
-                document.getElementById('modalAngle').textContent = t.angle > 0 ? `+${t.angle}` : t.angle;
-            } else {
-                document.getElementById('modalEnvData').style.display = 'none';
+            // Toggle behavior - if already open, close it
+            if (modal.style.display === 'block') {
+                modal.style.display = 'none';
+                playSound('click');
+                return;
             }
             
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
+            const caliber = document.getElementById('caliberSelect').value;
+            const table = ballisticData[caliber];
             
-            data.forEach(row => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${row.range}</td>
-                    <td>${row.elev.toFixed(1)}</td>
-                    <td>${row.drift10.toFixed(1)}</td>
-                `;
-                tbody.appendChild(tr);
+            let tableHTML = '<table><thead><tr><th>Range (m)</th><th>Elevation (mils UP)</th><th>Wind Drift @ 10mph<br>(mils)</th></tr></thead><tbody>';
+            
+            table.forEach(row => {
+                // Skip 100m row
+                if (row.range === 100) return;
+                tableHTML += `<tr><td>${row.range}</td><td>${row.elev.toFixed(1)}</td><td>${row.drift10.toFixed(1)}</td></tr>`;
             });
             
-            document.getElementById('modal').style.display = 'block';
+            tableHTML += '</tbody></table>';
+            
+            document.getElementById('ballisticModalContent').innerHTML = `
+                <button class="closeModalBtn" onclick="document.getElementById('ballisticModal').style.display='none'; playSound('click')">Close</button>
+                <h2 style="color: #ff0; clear: both; margin: 5px 0 5px 0; font-size: 1.1em;">📊 ${caliber}</h2>
+                <p style="color: #aaa; margin: 0 0 15px 0; font-size: 0.85em;">Standard Atmosphere: 59°F, Sea Level, 29.92" Hg, 100m Zero</p>
+                
+                <div class="ballistic-content-wrapper">
+                    <div class="ballistic-table-section">
+                        ${tableHTML}
+                        <p style="color: #ff0; margin-top: 10px; font-size: 0.9em;">⚠️ Drift values show bullet movement. Aim OPPOSITE direction to compensate.</p>
+                    </div>
+                    
+                    <div class="calculator">
+                        <div class="calc-display" id="calcDisplay">0</div>
+                        <div class="calc-buttons">
+                            <button class="calc-btn" onclick="calcInput('7')">7</button>
+                            <button class="calc-btn" onclick="calcInput('8')">8</button>
+                            <button class="calc-btn" onclick="calcInput('9')">9</button>
+                            <button class="calc-btn operator" onclick="calcInput('/')">÷</button>
+                            
+                            <button class="calc-btn" onclick="calcInput('4')">4</button>
+                            <button class="calc-btn" onclick="calcInput('5')">5</button>
+                            <button class="calc-btn" onclick="calcInput('6')">6</button>
+                            <button class="calc-btn operator" onclick="calcInput('*')">×</button>
+                            
+                            <button class="calc-btn" onclick="calcInput('1')">1</button>
+                            <button class="calc-btn" onclick="calcInput('2')">2</button>
+                            <button class="calc-btn" onclick="calcInput('3')">3</button>
+                            <button class="calc-btn operator" onclick="calcInput('-')">−</button>
+                            
+                            <button class="calc-btn" onclick="calcInput('0')">0</button>
+                            <button class="calc-btn" onclick="calcInput('.')">.</button>
+                            <button class="calc-btn operator" onclick="calcCos()">cos</button>
+                            <button class="calc-btn operator" onclick="calcInput('+')">+</button>
+                            
+                            <button class="calc-btn clear" onclick="calcClear()">C</button>
+                            <button class="calc-btn" onclick="calcBackspace()">⌫</button>
+                            <button class="calc-btn equals" onclick="calcEquals()">=</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            modal.style.display = 'block';
+            playSound('click');
+        }
+        
+        // Calculator functions
+        let calcCurrentValue = '0';
+        let calcPreviousValue = '';
+        let calcOperation = '';
+        
+        function calcInput(value) {
+            const display = document.getElementById('calcDisplay');
+            if (calcCurrentValue === '0' && value !== '.') {
+                calcCurrentValue = value;
+            } else if (value === '.' && calcCurrentValue.includes('.')) {
+                return; // Don't add multiple decimals
+            } else {
+                calcCurrentValue += value;
+            }
+            
+            // Handle operators
+            if (['+', '-', '*', '/'].includes(value)) {
+                if (calcPreviousValue !== '') {
+                    calcEquals();
+                }
+                calcOperation = value;
+                calcPreviousValue = calcCurrentValue.replace(/[+\-*/]$/, '');
+                calcCurrentValue = '0';
+            }
+            
+            display.textContent = calcCurrentValue;
+        }
+        
+        function calcEquals() {
+            const display = document.getElementById('calcDisplay');
+            if (calcPreviousValue === '' || calcOperation === '') return;
+            
+            const prev = parseFloat(calcPreviousValue);
+            const current = parseFloat(calcCurrentValue);
+            let result = 0;
+            
+            switch(calcOperation) {
+                case '+': result = prev + current; break;
+                case '-': result = prev - current; break;
+                case '*': result = prev * current; break;
+                case '/': result = current !== 0 ? prev / current : 'Error'; break;
+            }
+            
+            // Format to max 3 decimal places
+            if (result !== 'Error') {
+                result = parseFloat(result.toFixed(3));
+            }
+            
+            calcCurrentValue = result.toString();
+            calcPreviousValue = '';
+            calcOperation = '';
+            display.textContent = calcCurrentValue;
+        }
+        
+        function calcClear() {
+            calcCurrentValue = '0';
+            calcPreviousValue = '';
+            calcOperation = '';
+            document.getElementById('calcDisplay').textContent = '0';
+        }
+        
+        function calcBackspace() {
+            if (calcCurrentValue.length > 1) {
+                calcCurrentValue = calcCurrentValue.slice(0, -1);
+            } else {
+                calcCurrentValue = '0';
+            }
+            document.getElementById('calcDisplay').textContent = calcCurrentValue;
+        }
+        
+        function calcCos() {
+            const value = parseFloat(calcCurrentValue);
+            // Interpret as degrees
+            const radians = value * Math.PI / 180;
+            const result = Math.cos(radians);
+            calcCurrentValue = result.toFixed(3); // Max 3 decimal places
+            document.getElementById('calcDisplay').textContent = calcCurrentValue;
+        }
+        
+        function showMathGuide() {
+            document.getElementById('mathModalContent').innerHTML = `
+                <button class="closeModalBtn" onclick="document.getElementById('mathModal').style.display='none'; playSound('click')">Close</button>
+                <h2 style="color: #ff0; clear: both;">📖 Math Guide</h2>
+                
+                <h3 style="color: #0ff; margin-top: 20px;">1. Reading the Ballistic Table</h3>
+                <p>The table shows elevation and wind drift for your ammunition:</p>
+                <ul style="margin-left: 20px;">
+                    <li><strong>Elevation:</strong> Mils UP to compensate for bullet drop</li>
+                    <li><strong>Drift @ 10mph:</strong> Mils the bullet drifts LEFT in a 10mph R→L crosswind</li>
+                </ul>
+                <p>For ranges between table values, use <strong>linear interpolation</strong>.</p>
+                
+                <h3 style="color: #0ff; margin-top: 20px;">2. Angle Compensation</h3>
+                <p><strong>Formula:</strong> Effective Range = Distance × cos(angle)</p>
+                <p>Gravity only acts on the horizontal component of bullet travel.</p>
+                <p><strong>Example:</strong> 600m target at +15° angle:</p>
+                <p style="margin-left: 20px;">600 × cos(15°) = 600 × 0.966 = 580m</p>
+                <p style="margin-left: 20px;">Use 580m in ballistic table for elevation!</p>
+                
+                <h3 style="color: #0ff; margin-top: 20px;">3. Wind Drift</h3>
+                <p><strong>Formula:</strong> Drift Correction = Table Drift × (Actual Wind / 10)</p>
+                <p><strong>Example - Right to Left Wind:</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li>Wind blowing R→L at 10mph pushes bullet LEFT</li>
+                    <li>To compensate, aim RIGHT (into the wind)</li>
+                    <li>If table shows 2.0 mils drift, your correction is 2.0 mils RIGHT</li>
+                </ul>
+                <p><strong>Example - Left to Right Wind:</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li>Wind blowing L→R at 10mph pushes bullet RIGHT</li>
+                    <li>To compensate, aim LEFT (into the wind)</li>
+                    <li>If table shows 2.0 mils drift, your correction is 2.0 mils LEFT</li>
+                </ul>
+                
+                <h3 style="color: #0ff; margin-top: 20px;">4. Complete Example</h3>
+                <p>Target: 650m, +12° angle, 8mph R→L wind, using .308 Winchester</p>
+                <p><strong>Step 1:</strong> Angle compensation</p>
+                <p style="margin-left: 20px;">650 × cos(12°) = 650 × 0.978 = 636m effective</p>
+                
+                <p><strong>Step 2:</strong> Elevation (interpolate between 600m and 700m):</p>
+                <p style="margin-left: 20px;">At 600m: 2.3 mils | At 700m: 3.3 mils</p>
+                <p style="margin-left: 20px;">636m is 36% between 600-700</p>
+                <p style="margin-left: 20px;">2.3 + (3.3 - 2.3) × 0.36 = 2.66 mils UP</p>
+                
+                <p><strong>Step 3:</strong> Wind drift (interpolate same way):</p>
+                <p style="margin-left: 20px;">At 600m: 1.4 mils | At 700m: 1.9 mils</p>
+                <p style="margin-left: 20px;">1.4 + (1.9 - 1.4) × 0.36 = 1.58 mils drift @ 10mph</p>
+                <p style="margin-left: 20px;">Actual: 1.58 × (8/10) = 1.26 mils LEFT drift</p>
+                <p style="margin-left: 20px;">Correction: <strong>1.26 mils RIGHT</strong></p>
+                
+                <p><strong>Final answer: 2.66 mils UP, 1.26 mils RIGHT</strong></p>
+                
+                <h3 style="color: #0ff; margin-top: 20px;">5. Tips</h3>
+                <ul style="margin-left: 20px;">
+                    <li>Always apply angle compensation BEFORE using ballistic table</li>
+                    <li>Wind correction direction: aim INTO the wind (opposite of bullet drift)</li>
+                    <li>Use the notepad to show your work</li>
+                    <li>Practice mental math for quick calculations</li>
+                </ul>
+            `;
+            
+            document.getElementById('mathModal').style.display = 'block';
+            playSound('click');
         }
         
         function showResultsHistory() {
-            const tbody = document.getElementById('resultsTableBody');
-            tbody.innerHTML = '';
+            let historyHTML = '';
             
             if (gameState.shotHistory.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#aaa;">No shots fired yet</td></tr>';
+                historyHTML = '<tr><td colspan="5" style="text-align:center; color:#aaa;">No shots fired yet</td></tr>';
             } else {
                 gameState.shotHistory.forEach(shot => {
-                    const tr = document.createElement('tr');
-                    tr.style.color = shot.hit ? '#0f0' : '#f88';
-                    tr.innerHTML = `
-                        <td>${shot.round}</td>
-                        <td>${shot.distance}m</td>
-                        <td>${shot.caliber.split('(')[0].trim()}</td>
-                        <td>${shot.error.toFixed(3)}</td>
-                        <td>${shot.hit ? '✓ HIT' : '✗ MISS'}</td>
+                    historyHTML += `
+                        <tr>
+                            <td>${shot.round}</td>
+                            <td>${shot.distance}m</td>
+                            <td style="font-size: 0.8em;">${shot.caliber.split(' ')[0]}</td>
+                            <td>${shot.error.toFixed(3)}</td>
+                            <td style="color: ${shot.hit ? '#0f0' : '#f00'}">${shot.hit ? '✓ Hit' : '✗ Miss'}</td>
+                        </tr>
                     `;
-                    tbody.appendChild(tr);
                 });
             }
             
-            // Update stats
-            const completed = gameState.shotHistory.length;
-            const avgError = completed > 0 ? (gameState.totalError / completed).toFixed(3) : '--';
+            const avgError = gameState.shotHistory.length > 0 
+                ? (gameState.totalError / gameState.shotHistory.length).toFixed(3)
+                : '--';
             
-            document.getElementById('resultsRounds').textContent = completed;
-            document.getElementById('resultsTotalError').textContent = gameState.totalError.toFixed(2);
-            document.getElementById('resultsAvgError').textContent = avgError;
-            document.getElementById('resultsPerfectHits').textContent = gameState.perfectHits;
+            document.getElementById('resultsModalContent').innerHTML = `
+                <button class="closeModalBtn" onclick="document.getElementById('resultsModal').style.display='none'; playSound('click')">Close</button>
+                <h2 style="color: #ff0; clear: both;">📊 Shot Results History</h2>
+                <table style="margin-top: 20px;">
+                    <thead>
+                        <tr>
+                            <th>Round</th>
+                            <th>Distance</th>
+                            <th>Caliber</th>
+                            <th>Error (mils)</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${historyHTML}
+                    </tbody>
+                </table>
+                <div style="margin-top: 20px; padding: 15px; border: 2px solid #0f0; border-radius: 5px;">
+                    <h3 style="color: #ff0;">Current Game Stats</h3>
+                    <div class="dataRow">Rounds Completed: <span>${gameState.shotHistory.length}</span>/10</div>
+                    <div class="dataRow">Total Error: <span>${gameState.totalError.toFixed(2)}</span> mils</div>
+                    <div class="dataRow">Average Error: <span>${avgError}</span> mils</div>
+                    <div class="dataRow">Perfect Hits: <span>${gameState.perfectHits}</span></div>
+                </div>
+            `;
             
             document.getElementById('resultsModal').style.display = 'block';
+            playSound('click');
         }
-
-        // Event Listeners
-        mainCanvas.addEventListener('click', (e) => {
-            if (gameState.animating || gameState.shotFired) return;
-            
-            const rect = mainCanvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            if (gameState.currentTarget) {
-                const tx = gameState.currentTarget.x * mainCanvas.width;
-                const ty = gameState.currentTarget.y * mainCanvas.height;
-                const dist = Math.sqrt((x - tx) ** 2 + (y - ty) ** 2);
-                
-                if (dist < 50) {
-                    selectTarget(gameState.currentTarget);
-                }
-            }
-        });
-
-        document.getElementById('sendButton').addEventListener('click', sendShot);
-        document.getElementById('nextButton').addEventListener('click', nextRound);
-        document.getElementById('resetButton').addEventListener('click', resetGame);
-        document.getElementById('overlayNextButton').addEventListener('click', nextRound);
-        document.getElementById('overlayResetButton').addEventListener('click', resetGame);
-        document.getElementById('closeOverlay').addEventListener('click', closeResultsOverlay);
-        document.getElementById('tableButton').addEventListener('click', showBallisticTable);
-        document.getElementById('mathGuideButton').addEventListener('click', () => {
-            document.getElementById('mathModal').style.display = 'block';
-        });
-        document.getElementById('resultsButton').addEventListener('click', showResultsHistory);
-        
-        document.getElementById('closeModal').addEventListener('click', () => {
-            document.getElementById('modal').style.display = 'none';
-        });
-        document.getElementById('closeMathModal').addEventListener('click', () => {
-            document.getElementById('mathModal').style.display = 'none';
-        });
-        document.getElementById('closeResultsModal').addEventListener('click', () => {
-            document.getElementById('resultsModal').style.display = 'none';
-        });
         
         // Click outside modals to close
+        document.getElementById('ballisticModal').addEventListener('click', (e) => {
+            if (e.target.id === 'ballisticModal') {
+                document.getElementById('ballisticModal').style.display = 'none';
+                playSound('click');
+            }
+        });
         document.getElementById('modal').addEventListener('click', (e) => {
             if (e.target.id === 'modal') {
                 document.getElementById('modal').style.display = 'none';
+                playSound('click');
             }
         });
         document.getElementById('mathModal').addEventListener('click', (e) => {
             if (e.target.id === 'mathModal') {
                 document.getElementById('mathModal').style.display = 'none';
+                playSound('click');
             }
         });
         document.getElementById('resultsModal').addEventListener('click', (e) => {
             if (e.target.id === 'resultsModal') {
                 document.getElementById('resultsModal').style.display = 'none';
+                playSound('click');
             }
         });
-
-        // Start game
-        function startGame() {
-            const highScore = localStorage.getItem('spotterHighScore');
+        
+        // Send button
+        document.getElementById('sendButton').addEventListener('click', sendShot);
+        
+        // ============================================================================
+        // INITIALIZATION
+        // ============================================================================
+        
+        async function startGame() {
+            const highScore = localStorage.getItem(GAME_CONSTANTS.STORAGE_HIGH_SCORE);
             if (highScore) {
                 document.getElementById('highScoreDisplay').textContent = highScore + ' mils';
             }
@@ -1648,8 +3293,40 @@ ${perfect ? '✓ Perfect shot (<0.3 mil)!' : hit ? '✓ Hit target (<1.0 mil)' :
             gameState.currentTarget = generateTargets();
             selectTarget(gameState.currentTarget);
         }
-
-        startGame();
+        
+        async function init() {
+            // Initialize sounds
+            await initSounds();
+            
+            // Load saved data
+            loadSettings();
+            loadNotepad();
+            
+            // Initialize weather
+            initWeather();
+            
+            // Initialize random environment settings
+            updateEnvironmentRandomness();
+            
+            // Start game
+            startGame();
+            
+            // Hide loading screen
+            setTimeout(() => {
+                document.getElementById('loadingScreen').classList.add('hidden');
+                
+                // Show tutorial for first-time players
+                if (!localStorage.getItem('tutorialSeen')) {
+                    setTimeout(() => {
+                        showTutorial();
+                        localStorage.setItem('tutorialSeen', 'true');
+                    }, 500);
+                }
+            }, 1000);
+        }
+        
+        // Start when page loads
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>
